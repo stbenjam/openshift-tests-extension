@@ -13,7 +13,7 @@ import (
 
 func main() {
 	root := &cobra.Command{
-		Long: "OpenShift Tests External Binary Example",
+		Long: "OpenShift Tests Extension Example",
 	}
 
 	root.AddCommand(
