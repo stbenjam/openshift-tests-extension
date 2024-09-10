@@ -1,17 +1,16 @@
-package main
+package ginkgo
 
 import (
 	"fmt"
 	"io"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/types"
-
-	_ "github.com/openshift-eng/openshift-tests-extension/test/example"
 )
 
 // TestOptions handles running a single test.
@@ -29,7 +28,13 @@ func NewTestOptions(out io.Writer, errOut io.Writer) *TestOptions {
 	}
 }
 
-func (opt *TestOptions) Run(args []string) error {
+func ListTests() []*TestCase {
+	tests := testsForSuite()
+	sort.Slice(tests, func(i, j int) bool { return tests[i].Name < tests[j].Name })
+	return tests
+}
+
+func (opt *TestOptions) RunTest(args []string, suiteDescription string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("only a single test name may be passed")
 	}
@@ -51,11 +56,8 @@ func (opt *TestOptions) Run(args []string) error {
 	suiteConfig, reporterConfig := ginkgo.GinkgoConfiguration()
 	suiteConfig.FocusStrings = []string{fmt.Sprintf("^ %s$", regexp.QuoteMeta(test.Name))}
 
-	// These settings are matched to upstream's ginkgo configuration. See:
-	// https://github.com/kubernetes/kubernetes/blob/v1.25.0/test/e2e/framework/test_context.go#L354-L355
-	// Randomize specs as well as suites
+	// These settings are matched to upstream's ginkgo configuration.
 	suiteConfig.RandomizeAllSpecs = true
-	// https://github.com/kubernetes/kubernetes/blob/v1.25.0/hack/ginkgo-e2e.sh#L172-L173
 	suiteConfig.Timeout = 24 * time.Hour
 	reporterConfig.NoColor = true
 	reporterConfig.Verbose = true
@@ -66,7 +68,9 @@ func (opt *TestOptions) Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	ginkgo.GetSuite().RunSpec(test.spec, ginkgo.Labels{}, "Kubernetes e2e suite", cwd, ginkgo.GetFailer(), ginkgo.GetWriter(), suiteConfig, reporterConfig)
+
+	// Use the suite description passed from the cobra command
+	ginkgo.GetSuite().RunSpec(test.spec, ginkgo.Labels{}, suiteDescription, cwd, ginkgo.GetFailer(), ginkgo.GetWriter(), suiteConfig, reporterConfig)
 
 	var summary types.SpecReport
 	for _, report := range ginkgo.GetSuite().GetReport().SpecReports {
@@ -75,6 +79,10 @@ func (opt *TestOptions) Run(args []string) error {
 		}
 	}
 
+	return handleSummary(summary, opt)
+}
+
+func handleSummary(summary types.SpecReport, opt *TestOptions) error {
 	switch {
 	case summary.State == types.SpecStatePassed:
 		// do nothing
@@ -102,10 +110,7 @@ func (opt *TestOptions) Run(args []string) error {
 	return nil
 }
 
-func (opt *TestOptions) Fail() {
-	// this function allows us to pass TestOptions as the first argument,
-	// it's empty becase we have failure check mechanism implemented above.
-}
+func (opt *TestOptions) Fail() {}
 
 func lastFilenameSegment(filename string) string {
 	if parts := strings.Split(filename, "/vendor/"); len(parts) > 1 {
@@ -120,7 +125,6 @@ func lastFilenameSegment(filename string) string {
 func testsForSuite() []*TestCase {
 	var tests []*TestCase
 
-	// Don't build the tree multiple times, it results in multiple initing of tests
 	if !ginkgo.GetSuite().InPhaseBuildTree() {
 		if err := ginkgo.GetSuite().BuildTree(); err != nil {
 			panic(err)
@@ -136,4 +140,8 @@ func testsForSuite() []*TestCase {
 		tests = append(tests, testCase)
 	})
 	return tests
+}
+
+func (e ExitError) Error() string {
+	return fmt.Sprintf("exit with code %d", e.Code)
 }

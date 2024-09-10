@@ -4,16 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"github.com/spf13/cobra"
+
+	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
+
+	// Import your tests here
+	_ "github.com/openshift-eng/openshift-tests-extension/test/example"
 )
+
+const suite = "OpenShift Tests Extension"
 
 func main() {
 	root := &cobra.Command{
-		Long: "OpenShift Tests External Binary Example",
+		Long: "OpenShift Tests Extension Example",
 	}
 
 	root.AddCommand(
@@ -36,15 +42,15 @@ func main() {
 }
 
 func newRunTestCommand() *cobra.Command {
-	testOpt := NewTestOptions(os.Stdout, os.Stderr)
+	testOpt := g.NewTestOptions(os.Stdout, os.Stderr)
 
 	cmd := &cobra.Command{
 		Use:          "run-test NAME",
-		Short:        "Run a single test by name",
+		Short:        "RunTest a single test by name",
 		Long:         "Execute a single test.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return testOpt.Run(args)
+			return testOpt.RunTest(args, suite)
 		},
 	}
 	return cmd
@@ -57,8 +63,7 @@ func newListTestsCommand() *cobra.Command {
 		Long:         "List the available tests in this binary.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			tests := testsForSuite()
-			sort.Slice(tests, func(i, j int) bool { return tests[i].Name < tests[j].Name })
+			tests := g.ListTests()
 			data, err := json.Marshal(tests)
 			if err != nil {
 				return err
