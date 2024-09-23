@@ -7,10 +7,13 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 )
 
 func NewCommand() *cobra.Command {
+	envFlags := flags.NewEnvironmentFlags()
+
 	cmd := &cobra.Command{
 		Use:          "list",
 		Short:        "List available tests",
@@ -26,6 +29,7 @@ func NewCommand() *cobra.Command {
 			return nil
 		},
 	}
+	envFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }

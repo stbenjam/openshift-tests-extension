@@ -11,8 +11,6 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdinfo"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdlist"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdrun"
-	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
-
 	// Import your tests here
 	_ "github.com/openshift-eng/openshift-tests-extension/test/example"
 )
@@ -43,19 +41,4 @@ func main() {
 		}
 		os.Exit(1)
 	}
-}
-
-func newRunTestCommand() *cobra.Command {
-	testOpt := g.NewTestOptions(os.Stdout, os.Stderr)
-
-	cmd := &cobra.Command{
-		Use:          "run-test NAME",
-		Short:        "RunTest a single test by name",
-		Long:         "Execute a single test.",
-		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return testOpt.RunTest(args, suite)
-		},
-	}
-	return cmd
 }
