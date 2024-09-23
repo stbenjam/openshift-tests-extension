@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -9,13 +8,16 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/spf13/cobra"
 
-	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/info"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdinfo"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdlist"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdrun"
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 
 	// Import your tests here
 	_ "github.com/openshift-eng/openshift-tests-extension/test/example"
 )
 
+// TODO:remove this
 const suite = "OpenShift Tests Extension"
 
 func main() {
@@ -25,9 +27,9 @@ func main() {
 	}
 
 	root.AddCommand(
-		newRunTestCommand(),
-		newListTestsCommand(),
-		info.NewInfoCommand(),
+		cmdrun.NewCommand(suite),
+		cmdlist.NewCommand(),
+		cmdinfo.NewCommand(),
 	)
 
 	gomega.RegisterFailHandler(ginkgo.Fail)
@@ -39,7 +41,6 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Ginkgo exit error %d: %v\n", ex.Code, err)
 			os.Exit(ex.Code)
 		}
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -56,25 +57,5 @@ func newRunTestCommand() *cobra.Command {
 			return testOpt.RunTest(args, suite)
 		},
 	}
-	return cmd
-}
-
-func newListTestsCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:          "list",
-		Short:        "List available tests",
-		Long:         "List the available tests in this binary.",
-		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			tests := g.ListTests()
-			data, err := json.Marshal(tests)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(os.Stdout, "%s\n", data)
-			return nil
-		},
-	}
-
 	return cmd
 }

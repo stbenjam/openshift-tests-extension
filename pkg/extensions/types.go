@@ -1,4 +1,4 @@
-package api
+package extensions
 
 // Extension represents an extension to openshift-tests.
 type Extension struct {
@@ -12,10 +12,14 @@ type Extension struct {
 
 // Source contains the details of the commit and source URL.
 type Source struct {
-	// The commit from which this binary was compiled.
+	// Commit from which this binary was compiled.
 	Commit string `json:"commit"`
-	// The git repository (if known) that this extension was built from.
-	SourceURL string `json:"source_url"`
+	// BuildDate ISO8601 string of when the binary was built
+	BuildDate string `json:"build_date"`
+	// GitTreeState lets you know the status of the git tree (clean/dirty)
+	GitTreeState string `json:"git_tree_state"`
+	// SourceURL contains the url of the git repository (if known) that this extension was built from.
+	SourceURL string `json:"source_url,omitempty"`
 }
 
 // Component represents the component the binary acts on.
@@ -33,5 +37,5 @@ type Suite struct {
 	// The name of the suite.
 	Name string `json:"name"`
 	// Parent suites this suite is part of.
-	Parents []string `json:"parents"`
+	Parents []string `json:"parents,omitempty"`
 }

@@ -1,4 +1,4 @@
-package info
+package cmdinfo
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
-func NewInfoCommand() *cobra.Command {
+func NewCommand() *cobra.Command {
 	componentFlags := flags.NewComponentFlags()
 
 	cmd := &cobra.Command{
@@ -21,8 +21,8 @@ func NewInfoCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registry := extensions.NewExtensionRegistry()
 			extension := registry.Get(componentFlags.Component)
-			if extension != nil {
-				return fmt.Errorf("couldn't find the named extension %q", extension)
+			if extension == nil {
+				return fmt.Errorf("couldn't find the component %q", componentFlags.Component)
 			}
 
 			info, err := json.MarshalIndent(extension, "", "    ")
@@ -30,7 +30,7 @@ func NewInfoCommand() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(os.Stdout, string(info))
+			fmt.Fprintf(os.Stdout, "%s\n", string(info))
 			return nil
 		},
 	}
