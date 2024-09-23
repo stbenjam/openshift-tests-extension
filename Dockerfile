@@ -1,0 +1,17 @@
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.22-openshift-4.17 AS builder
+WORKDIR /go/src/github.com/openshift-eng/openshift-tests-extension
+COPY . .
+RUN make; \
+    mkdir -p /tmp/build; \
+    cp /go/src/github.com/openshift-eng/openshift-tests-extension/example-tests /tmp/build/example-tests
+
+FROM registry.ci.openshift.org/ocp/4.17:tools
+COPY --from=builder /tmp/build/example-tests /usr/bin/
+
+RUN PACKAGES="git gzip util-linux" && \
+    dnf install --setopt=tsflags=nodocs -y $PACKAGES && \
+    dnf clean all && rm -rf /var/cache/yum/* && \
+LABEL io.k8s.display-name="OpenShift Tests Extension" \
+      io.openshift.release.operator=true \
+      io.k8s.description="OpenShift is a platform for developing, building, and deploying containerized applications." \
+      io.openshift.tags="openshift,tests,e2e,e2e-extension"

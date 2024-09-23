@@ -8,7 +8,6 @@ import (
 )
 
 var _ = Describe("Simple Tests", func() {
-
 	It("should print 'Hello, OpenShift!'", func() {
 		fmt.Println("Hello, OpenShift!")
 		Expect(true).To(BeTrue()) // This ensures the test passes
@@ -18,5 +17,4 @@ var _ = Describe("Simple Tests", func() {
 		fmt.Println(":(")
 		Expect(true).To(BeFalse()) // This makes the test fail
 	})
-
 })

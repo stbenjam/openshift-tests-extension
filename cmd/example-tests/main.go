@@ -9,6 +9,7 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/spf13/cobra"
 
+	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/info"
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 
 	// Import your tests here
@@ -18,6 +19,7 @@ import (
 const suite = "OpenShift Tests Extension"
 
 func main() {
+
 	root := &cobra.Command{
 		Long: "OpenShift Tests Extension Example",
 	}
@@ -25,6 +27,7 @@ func main() {
 	root.AddCommand(
 		newRunTestCommand(),
 		newListTestsCommand(),
+		info.NewInfoCommand(),
 	)
 
 	gomega.RegisterFailHandler(ginkgo.Fail)
