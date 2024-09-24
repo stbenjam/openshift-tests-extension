@@ -122,8 +122,8 @@ func TestFilterTestCases(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FilterTestCases(tt.testCases, tt.envFlags); len(got) > 0 && len(tt.want) > 0 && !reflect.DeepEqual(getTestCaseNames(got), tt.want) {
-				t.Errorf("FilterTestCases() = %v, want %v", getTestCaseNames(got), tt.want)
+			if got := FilterTestCasesByEnvironment(tt.testCases, tt.envFlags); len(got) > 0 && len(tt.want) > 0 && !reflect.DeepEqual(getTestCaseNames(got), tt.want) {
+				t.Errorf("FilterTestCasesByEnvironment() = %v, want %v", getTestCaseNames(got), tt.want)
 			}
 		})
 	}

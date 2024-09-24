@@ -9,18 +9,38 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 )
 
-// FilterTestCases filters test cases based on the environment flags. Filters apply to either
+// FilterTestCasesBySuite filters test cases based on the suite.
+func FilterTestCasesBySuite(testCases []*ginkgo.TestCase, suite string) []*ginkgo.TestCase {
+	var filtered []*ginkgo.TestCase
+
+	for _, testCase := range testCases {
+		metadata := extractAnnotations(testCase.Name)
+		metadata = append(metadata, testCase.Labels...)
+
+		for _, a := range metadata {
+			lca := strings.ToLower(a)
+
+			if strings.HasPrefix(lca, "suite:") && strings.EqualFold(strings.TrimPrefix(lca, "suite:"), suite) {
+				filtered = append(filtered, testCase)
+			}
+		}
+	}
+
+	return filtered
+}
+
+// FilterTestCasesByEnvironment filters test cases based on the environment flags. Filters apply to either
 // annotations in the test name, or test labels.
-func FilterTestCases(testCases []*ginkgo.TestCase, envFlags sets.Set[string]) []*ginkgo.TestCase {
+func FilterTestCasesByEnvironment(testCases []*ginkgo.TestCase, envFlags sets.Set[string]) []*ginkgo.TestCase {
 	var filtered []*ginkgo.TestCase
 
 testCaseLoop:
 	for _, testCase := range testCases {
 		testHasInclude := false
-		annotations := extractAnnotations(testCase.Name)
-		annotations = append(annotations, testCase.Labels...)
+		metadata := extractAnnotations(testCase.Name)
+		metadata = append(metadata, testCase.Labels...)
 
-		for _, a := range annotations {
+		for _, a := range metadata {
 			lca := strings.ToLower(a)
 
 			if strings.HasPrefix(lca, "skipped:") {

@@ -15,10 +15,12 @@ import (
 
 func NewCommand() *cobra.Command {
 	var listOpts struct {
-		all      bool
-		envFlags *flags.EnvironmentFlags
+		all        bool
+		envFlags   *flags.EnvironmentFlags
+		suiteFlags *flags.SuiteFlags
 	}
 	listOpts.envFlags = flags.NewEnvironmentFlags()
+	listOpts.suiteFlags = flags.NewSuiteFlags()
 
 	cmd := &cobra.Command{
 		Use:          "list",
@@ -31,7 +33,11 @@ func NewCommand() *cobra.Command {
 			if !listOpts.all {
 				// Filter by env flags
 				envSet := sets.New[string](listOpts.envFlags.Environments...)
-				tests = ginkgofilter.FilterTestCases(tests, envSet)
+				tests = ginkgofilter.FilterTestCasesByEnvironment(tests, envSet)
+			}
+
+			if suite := listOpts.suiteFlags.Suite; suite != "" {
+				tests = ginkgofilter.FilterTestCasesBySuite(tests, suite)
 			}
 
 			data, err := json.MarshalIndent(tests, "", "  ")
@@ -44,6 +50,7 @@ func NewCommand() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&listOpts.all, "all", false, "Show all tests, with no environment filtering")
 	listOpts.envFlags.BindFlags(cmd.Flags())
+	listOpts.suiteFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }
