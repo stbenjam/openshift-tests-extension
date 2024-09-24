@@ -2,7 +2,6 @@ package ginkgofilter
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -15,20 +14,27 @@ func TestFilterTestCases(t *testing.T) {
 		name      string
 		testCases []*ginkgo.TestCase
 		envFlags  sets.Set[string]
-		want      []*ginkgo.TestCase
+		want      []string
 	}{
 		{
-			name: "Skip AWS platform test",
+			name: "Skip AWS platform test (annotation)",
 			testCases: []*ginkgo.TestCase{
 				{Name: "Test1 [Skipped:Platform:AWS]"},
 				{Name: "Test2 [Include:Platform:AWS]"},
 				{Name: "Test3"},
 			},
 			envFlags: sets.New[string]("platform:aws"),
-			want: []*ginkgo.TestCase{
-				{Name: "Test2 [Include:Platform:AWS]"},
+			want:     []string{"Test2 [Include:Platform:AWS]", "Test3"},
+		},
+		{
+			name: "Skip AWS platform test (label)",
+			testCases: []*ginkgo.TestCase{
+				{Name: "Test1", Labels: []string{"Skipped:Platform:AWS"}},
+				{Name: "Test2", Labels: []string{"Include:Platform:AWS"}},
 				{Name: "Test3"},
 			},
+			envFlags: sets.New[string]("platform:aws"),
+			want:     []string{"Test2", "Test3"},
 		},
 		{
 			name: "No match for skipped conditions",
@@ -37,10 +43,7 @@ func TestFilterTestCases(t *testing.T) {
 				{Name: "Test2"},
 			},
 			envFlags: sets.New[string]("platform:aws"),
-			want: []*ginkgo.TestCase{
-				{Name: "Test1 [Skipped:Platform:GCP]"},
-				{Name: "Test2"},
-			},
+			want:     []string{"Test1 [Skipped:Platform:GCP]", "Test2"},
 		},
 		{
 			name: "Run only specific environment",
@@ -50,10 +53,7 @@ func TestFilterTestCases(t *testing.T) {
 				{Name: "Test3"},
 			},
 			envFlags: sets.New[string]("platform:aws"),
-			want: []*ginkgo.TestCase{
-				{Name: "Test2 [Include:platform:aws]"},
-				{Name: "Test3"},
-			},
+			want:     []string{"Test2 [Include:platform:aws]", "Test3"},
 		},
 		{
 			name: "Skip test with no matching environment",
@@ -62,16 +62,13 @@ func TestFilterTestCases(t *testing.T) {
 				{Name: "Test2 [platform:aws]"},
 			},
 			envFlags: sets.New[string]("platform:aws", "network:v6"),
-			want: []*ginkgo.TestCase{
-				{Name: "Test1 [Skipped:topology:ha]"},
-				{Name: "Test2 [platform:aws]"},
-			},
+			want:     []string{"Test1 [Skipped:topology:ha]", "Test2 [platform:aws]"},
 		},
 		{
 			name:      "Empty test cases list",
 			testCases: []*ginkgo.TestCase{},
 			envFlags:  sets.New[string]("platform:aws"),
-			want:      []*ginkgo.TestCase{},
+			want:      []string{},
 		},
 		{
 			name: "No env flags provided",
@@ -81,11 +78,7 @@ func TestFilterTestCases(t *testing.T) {
 				{Name: "Test3"},
 			},
 			envFlags: sets.New[string](),
-			want: []*ginkgo.TestCase{
-				{Name: "Test1 [platform:aws]"},
-				{Name: "Test2 [Skipped:platform:gcp]"},
-				{Name: "Test3"},
-			},
+			want:     []string{"Test1 [platform:aws]", "Test2 [Skipped:platform:gcp]", "Test3"},
 		},
 		{
 			name: "Skip condition in middle of test name",
@@ -95,10 +88,7 @@ func TestFilterTestCases(t *testing.T) {
 				{Name: "Test3"},
 			},
 			envFlags: sets.New[string]("platform:aws"),
-			want: []*ginkgo.TestCase{
-				{Name: "Test2 [Skipped:platform:gcp]"},
-				{Name: "Test3"},
-			},
+			want:     []string{"Test2 [Skipped:platform:gcp]", "Test3"},
 		},
 		{
 			name: "Case insensitive skip",
@@ -108,10 +98,7 @@ func TestFilterTestCases(t *testing.T) {
 				{Name: "Test3"},
 			},
 			envFlags: sets.New[string]("platform:aws"),
-			want: []*ginkgo.TestCase{
-				{Name: "Test2 [platform:aws]"},
-				{Name: "Test3"},
-			},
+			want:     []string{"Test2 [platform:aws]", "Test3"},
 		},
 		{
 			name: "Multiple environment conditions",
@@ -121,10 +108,7 @@ func TestFilterTestCases(t *testing.T) {
 				{Name: "Test3 [Skipped:topology:ha]"},
 			},
 			envFlags: sets.New("platform:aws", "networkstack:v6"),
-			want: []*ginkgo.TestCase{
-				{Name: "Test2 [Include:NetworkStack:v6]"},
-				{Name: "Test3 [Skipped:topology:ha]"},
-			},
+			want:     []string{"Test2 [Include:NetworkStack:v6]", "Test3 [Skipped:topology:ha]"},
 		},
 		{
 			name: "Multiple run-only conditions, no matches",
@@ -133,26 +117,22 @@ func TestFilterTestCases(t *testing.T) {
 				{Name: "Test2 [Include:networkstack:v4]"},
 			},
 			envFlags: sets.New[string]("platform:aws", "networkstack:v6"),
-			want:     []*ginkgo.TestCase{},
+			want:     []string{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FilterTestCases(tt.testCases, tt.envFlags); !reflect.DeepEqual(got, tt.want) {
-				if len(tt.want) == 0 && len(got) == 0 {
-					return
-				}
-
-				var gotSlice, wantSlice []string
-				for _, g := range got {
-					gotSlice = append(gotSlice, g.Name)
-				}
-				for _, w := range tt.want {
-					wantSlice = append(wantSlice, w.Name)
-				}
-
-				t.Errorf("FilterTestCases() = %v, wanted %v", strings.Join(gotSlice, ", "), strings.Join(wantSlice, ", "))
+			if got := FilterTestCases(tt.testCases, tt.envFlags); len(got) > 0 && len(tt.want) > 0 && !reflect.DeepEqual(getTestCaseNames(got), tt.want) {
+				t.Errorf("FilterTestCases() = %v, want %v", getTestCaseNames(got), tt.want)
 			}
 		})
 	}
+}
+
+func getTestCaseNames(testCases []*ginkgo.TestCase) []string {
+	var names []string
+	for _, testCase := range testCases {
+		names = append(names, testCase.Name)
+	}
+	return names
 }

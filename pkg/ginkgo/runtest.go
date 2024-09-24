@@ -134,6 +134,7 @@ func testsForSuite() []*TestCase {
 	ginkgo.GetSuite().WalkTests(func(name string, spec types.TestSpec) {
 		testCase := &TestCase{
 			Name:      spec.Text(),
+			Labels:    spec.Labels(),
 			locations: spec.CodeLocations(),
 			spec:      spec,
 		}

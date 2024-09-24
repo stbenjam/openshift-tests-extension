@@ -19,6 +19,7 @@ testCaseLoop:
 	for _, testCase := range testCases {
 		testHasInclude := false
 		annotations := extractAnnotations(testCase.Name)
+		annotations = append(annotations, testCase.Labels...)
 
 		for _, a := range annotations {
 			la := strings.ToLower(a)

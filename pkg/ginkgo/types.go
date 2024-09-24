@@ -6,6 +6,7 @@ type TestCase struct {
 	Name      string
 	locations []types.CodeLocation
 	spec      types.TestSpec
+	Labels    []string `json:",omitempty"`
 }
 
 type ExitError struct {
