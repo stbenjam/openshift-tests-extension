@@ -9,9 +9,8 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 )
 
-// FilterTestCases filters test cases based on the environment flags. Ideally, we'd do this based
-// on additional meta data like labels to avoid test name changes, but for now just use the annotations.
-// FIXME(stbenjam): fetch skip/includes from other metadata (ginkgo labels?)
+// FilterTestCases filters test cases based on the environment flags. Filters apply to either
+// annotations in the test name, or test labels.
 func FilterTestCases(testCases []*ginkgo.TestCase, envFlags sets.Set[string]) []*ginkgo.TestCase {
 	var filtered []*ginkgo.TestCase
 
@@ -22,10 +21,10 @@ testCaseLoop:
 		annotations = append(annotations, testCase.Labels...)
 
 		for _, a := range annotations {
-			la := strings.ToLower(a)
+			lca := strings.ToLower(a)
 
-			if strings.HasPrefix(strings.ToLower(a), "skipped:") {
-				condition := strings.TrimPrefix(la, "skipped:")
+			if strings.HasPrefix(lca, "skipped:") {
+				condition := strings.TrimPrefix(lca, "skipped:")
 				if envFlags.Has(condition) {
 					continue testCaseLoop // skip this test
 				}
@@ -33,7 +32,7 @@ testCaseLoop:
 
 			if strings.HasPrefix(strings.ToLower(a), "include:") {
 				testHasInclude = true
-				condition := strings.TrimPrefix(la, "include:")
+				condition := strings.TrimPrefix(lca, "include:")
 				if envFlags.Has(condition) {
 					filtered = append(filtered, testCase) // include this test for sure
 					break

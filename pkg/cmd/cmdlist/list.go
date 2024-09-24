@@ -14,7 +14,11 @@ import (
 )
 
 func NewCommand() *cobra.Command {
-	envFlags := flags.NewEnvironmentFlags()
+	var listOpts struct {
+		all      bool
+		envFlags *flags.EnvironmentFlags
+	}
+	listOpts.envFlags = flags.NewEnvironmentFlags()
 
 	cmd := &cobra.Command{
 		Use:          "list",
@@ -24,11 +28,13 @@ func NewCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			tests := g.ListTests()
 
-			// Filter by env flags
-			envSet := sets.New[string](envFlags.Environments...)
-			tests = ginkgofilter.FilterTestCases(tests, envSet)
+			if !listOpts.all {
+				// Filter by env flags
+				envSet := sets.New[string](listOpts.envFlags.Environments...)
+				tests = ginkgofilter.FilterTestCases(tests, envSet)
+			}
 
-			data, err := json.Marshal(tests)
+			data, err := json.MarshalIndent(tests, "", "  ")
 			if err != nil {
 				return err
 			}
@@ -36,7 +42,8 @@ func NewCommand() *cobra.Command {
 			return nil
 		},
 	}
-	envFlags.BindFlags(cmd.Flags())
+	cmd.Flags().BoolVar(&listOpts.all, "all", false, "Show all tests, with no environment filtering")
+	listOpts.envFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }
