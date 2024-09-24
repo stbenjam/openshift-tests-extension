@@ -9,7 +9,9 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 )
 
-// FilterTestCases filters test cases based on the environment flags
+// FilterTestCases filters test cases based on the environment flags. Ideally, we'd do this based
+// on additional meta data like labels to avoid test name changes, but for now just use the annotations.
+// FIXME(stbenjam): fetch skip/includes from other metadata (ginkgo labels?)
 func FilterTestCases(testCases []*ginkgo.TestCase, envFlags sets.Set[string]) []*ginkgo.TestCase {
 	var filtered []*ginkgo.TestCase
 

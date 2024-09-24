@@ -17,4 +17,12 @@ var _ = Describe("Simple Tests", func() {
 		fmt.Println(":(")
 		Expect(true).To(BeFalse()) // This makes the test fail
 	})
+
+	It("should filter test results [Skipped:Platform:AWS]", func() {
+		Expect(true).To(BeTrue())
+	})
+
+	It("should only run on AWS [Include:Platform:AWS]", func() {
+		Expect(true).To(BeTrue())
+	})
 })

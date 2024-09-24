@@ -6,9 +6,11 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo/ginkgofilter"
 )
 
 func NewCommand() *cobra.Command {
@@ -21,6 +23,11 @@ func NewCommand() *cobra.Command {
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			tests := g.ListTests()
+
+			// Filter by env flags
+			envSet := sets.New[string](envFlags.Environments...)
+			tests = ginkgofilter.FilterTestCases(tests, envSet)
+
 			data, err := json.Marshal(tests)
 			if err != nil {
 				return err
