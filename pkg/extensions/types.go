@@ -1,5 +1,7 @@
 package extensions
 
+const CurrentExtensionVersion = "v1"
+
 // Extension represents an extension to openshift-tests.
 type Extension struct {
 	APIVersion string    `json:"apiVersion"`
@@ -27,7 +29,7 @@ type Component struct {
 	// The product this component is part of.
 	Product string `json:"product"`
 	// The type of the component.
-	Type string `json:"type"`
+	Kind string `json:"type"`
 	// The name of the component.
 	Name string `json:"name"`
 }

@@ -11,6 +11,8 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdinfo"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdlist"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdrun"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extensions"
+
 	// Import your tests here
 	_ "github.com/openshift-eng/openshift-tests-extension/test/example"
 )
@@ -19,6 +21,14 @@ import (
 const suite = "OpenShift Tests Extension"
 
 func main() {
+	// Extension registry
+	registry := extensions.NewRegistry()
+
+	// Default extension
+	ext := extensions.NewExtension("openshift", "payload", "example-tests")
+	ext.AddSuite(extensions.Suite{Name: "openshift/conformance/parallel"})
+	ext.AddSuite(extensions.Suite{Name: "example/tests"})
+	registry.Register(ext)
 
 	root := &cobra.Command{
 		Long: "OpenShift Tests Extension Example",

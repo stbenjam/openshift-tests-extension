@@ -4,9 +4,8 @@ type Registry struct {
 	extensions map[string]*Extension
 }
 
-func NewExtensionRegistry() *Registry {
+func NewRegistry() *Registry {
 	var r Registry
-	r.Register("default", DefaultExtension)
 	return &r
 }
 
@@ -14,12 +13,12 @@ func (r *Registry) Get(name string) *Extension {
 	return r.extensions[name]
 }
 
-func (r *Registry) Register(name string, extension Extension) {
+func (r *Registry) Register(extension *Extension) {
 	if r.extensions == nil {
 		r.extensions = make(map[string]*Extension)
 	}
 
-	r.extensions[name] = &extension
+	r.extensions[extension.Component.Name] = extension
 }
 
 func (r *Registry) Deregister(name string) {
