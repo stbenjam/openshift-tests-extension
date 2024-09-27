@@ -1,5 +1,7 @@
 package extensions
 
+import "github.com/openshift-eng/openshift-tests-extension/pkg/testspec"
+
 const CurrentExtensionVersion = "v1"
 
 // Extension represents an extension to openshift-tests.
@@ -10,6 +12,9 @@ type Extension struct {
 
 	// Suites that the extension wants to advertise/participate in.
 	Suites []Suite `json:"suites"`
+
+	// Private data
+	specs []*testspec.TestSpec
 }
 
 // Source contains the details of the commit and source URL.

@@ -13,7 +13,7 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdrun"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/extensions"
 
-	// Import your tests here
+	// If using ginkgo, import your tests here
 	_ "github.com/openshift-eng/openshift-tests-extension/test/example"
 )
 
@@ -24,16 +24,28 @@ func main() {
 	// Extension registry
 	registry := extensions.NewRegistry()
 
-	// Default extension
+	// Default extension -- more than one are possible and selectable with the "--component" flag
 	ext := extensions.NewExtension("openshift", "payload", "example-tests")
 	ext.AddSuite(extensions.Suite{Name: "openshift/conformance/parallel"})
-	ext.AddSuite(extensions.Suite{Name: "example/tests"})
+	ext.AddSuite(extensions.Suite{Name: "example/tests", Parents: []string{"openshift/conformance/parallel"}})
+
+	// If using Gingko, build test specs automatically
+	_, err := ext.BuildExtensionTestSpecsFromOpenShiftGinkgoSuite()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	// If not using gingko build the test specs manually
+	// TODO:example
+
 	registry.Register(ext)
 
 	root := &cobra.Command{
 		Long: "OpenShift Tests Extension Example",
 	}
 
+	// TODO: Wire up extension stuff
 	root.AddCommand(
 		cmdrun.NewCommand(suite),
 		cmdlist.NewCommand(),

@@ -17,10 +17,12 @@ var _ = Describe("Simple Tests", g.Suite("openshift.conformance.parallel"), func
 		Expect(true).To(BeTrue()) // This ensures the test passes
 	})
 
-	It("should fail and print a sad face", func() {
-		fmt.Println(":(")
-		Expect(true).To(BeFalse()) // This makes the test fail
-	})
+	It("should fail and print a sad face",
+		g.Informing(),
+		func() {
+			fmt.Println(":(")
+			Expect(true).To(BeFalse()) // This makes the test fail
+		})
 
 	It("should filter test results by label", Labels([]string{"Skipped:Platform:AWS"}), func() {
 		Expect(true).To(BeTrue())
