@@ -11,30 +11,28 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdinfo"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdlist"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdrun"
-	"github.com/openshift-eng/openshift-tests-extension/pkg/extensions"
+	e "github.com/openshift-eng/openshift-tests-extension/pkg/extensions"
+	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 
 	// If using ginkgo, import your tests here
 	_ "github.com/openshift-eng/openshift-tests-extension/test/example"
 )
 
-// TODO:remove this
-const suite = "OpenShift Tests Extension"
-
 func main() {
 	// Extension registry
-	registry := extensions.NewRegistry()
+	registry := e.NewRegistry()
 
-	// Default extension -- more than one are possible and selectable with the "--component" flag
-	ext := extensions.NewExtension("openshift", "payload", "example-tests")
-	ext.AddSuite(extensions.Suite{Name: "openshift/conformance/parallel"})
-	ext.AddSuite(extensions.Suite{Name: "example/tests", Parents: []string{"openshift/conformance/parallel"}})
+	ext := e.NewExtension("openshift", "payload", "default")
+	ext.AddSuite(e.Suite{Name: "openshift/conformance/parallel"})
+	ext.AddSuite(e.Suite{Name: "example/tests", Parents: []string{"openshift/conformance/parallel"}})
 
 	// If using Gingko, build test specs automatically
-	_, err := ext.BuildExtensionTestSpecsFromOpenShiftGinkgoSuite()
+	specs, err := g.BuildExtensionTestSpecsFromOpenShiftGinkgoSuite()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error())
 		os.Exit(1)
 	}
+	ext.AddSpecs(specs)
 
 	// If not using gingko build the test specs manually
 	// TODO:example
@@ -47,8 +45,8 @@ func main() {
 
 	// TODO: Wire up extension stuff
 	root.AddCommand(
-		cmdrun.NewCommand(suite),
-		cmdlist.NewCommand(),
+		cmdrun.NewCommand("foobar"),
+		cmdlist.NewCommand(registry),
 		cmdinfo.NewCommand(),
 	)
 

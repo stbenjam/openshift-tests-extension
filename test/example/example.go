@@ -11,7 +11,7 @@ import (
 
 // FIXME(stbenjam): ginkgo doesn't allow "/" in label names, so it's hard to use this for our existing suite names,
 // maybe convert "." to "/" always?
-var _ = Describe("Simple Tests", g.Suite("openshift.conformance.parallel"), func() {
+var _ = Describe("Simple Tests", func() {
 	It("should print 'Hello, OpenShift!'", func() {
 		fmt.Println("Hello, OpenShift!")
 		Expect(true).To(BeTrue()) // This ensures the test passes
@@ -28,7 +28,7 @@ var _ = Describe("Simple Tests", g.Suite("openshift.conformance.parallel"), func
 		Expect(true).To(BeTrue())
 	})
 
-	It("should only run on AWS with annotation [Include:Platform:AWS]", g.Suite("example.extension"), func() {
+	It("should only run on AWS with annotation [Include:Platform:AWS]", func() {
 		Expect(true).To(BeTrue())
 	})
 })

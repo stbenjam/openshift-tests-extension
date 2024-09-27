@@ -1,6 +1,8 @@
 package extensions
 
-import "github.com/openshift-eng/openshift-tests-extension/pkg/testspec"
+import (
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extensions/testspec"
+)
 
 const CurrentExtensionVersion = "v1"
 
@@ -14,7 +16,15 @@ type Extension struct {
 	Suites []Suite `json:"suites"`
 
 	// Private data
-	specs []*testspec.TestSpec
+	specs []*testspec.ExtensionTestSpec
+}
+
+func (e *Extension) GetSpecs() []*testspec.ExtensionTestSpec {
+	return e.specs
+}
+
+func (e *Extension) AddSpecs(specs []*testspec.ExtensionTestSpec) {
+	e.specs = append(e.specs, specs...)
 }
 
 // Source contains the details of the commit and source URL.
@@ -45,4 +55,6 @@ type Suite struct {
 	Name string `json:"name"`
 	// Parent suites this suite is part of.
 	Parents []string `json:"parents,omitempty"`
+	// Qualifiers are CEL expressions that are OR'd together for test selection that are members of the suite.
+	Qualifiers []string `json:"qualifiers,omitempty"`
 }

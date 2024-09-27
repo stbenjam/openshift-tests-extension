@@ -6,14 +6,12 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/sets"
 
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extensions"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
-	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
-	"github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo/ginkgofilter"
 )
 
-func NewCommand() *cobra.Command {
+func NewCommand(registry *extensions.Registry) *cobra.Command {
 	var listOpts struct {
 		all        bool
 		envFlags   *flags.EnvironmentFlags
@@ -28,7 +26,7 @@ func NewCommand() *cobra.Command {
 		Long:         "List the available tests in this binary.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			tests := g.ListTests()
+			/*tests := g.ListTests()
 
 			if !listOpts.all {
 				// Filter by env flags
@@ -38,9 +36,9 @@ func NewCommand() *cobra.Command {
 
 			if suite := listOpts.suiteFlags.Suite; suite != "" {
 				tests = ginkgofilter.FilterTestCasesBySuite(tests, suite)
-			}
+			}*/
 
-			data, err := json.MarshalIndent(tests, "", "  ")
+			data, err := json.MarshalIndent(registry.Get("default").GetSpecs(), "", "  ")
 			if err != nil {
 				return err
 			}

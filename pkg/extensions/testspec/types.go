@@ -7,7 +7,7 @@ type Lifecycle string
 var LifecycleInforming Lifecycle = "informing"
 var LifecycleBlocking Lifecycle = "blocking"
 
-type TestSpec struct {
+type ExtensionTestSpec struct {
 	Name string `json:"name"`
 
 	// OtherNames contains a list of historical names for this test. If the test gets renamed in the future,
