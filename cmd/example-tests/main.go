@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -22,6 +21,8 @@ func main() {
 	registry := e.NewRegistry()
 
 	ext := e.NewExtension("openshift", "payload", "default")
+
+	//TODO: suites CEL filtering for qualifiers
 	ext.AddSuite(e.Suite{Name: "example/tests", Parents: []string{"openshift/conformance/parallel"}})
 
 	// If using Ginkgo, build test specs automatically
@@ -60,11 +61,7 @@ func main() {
 	if err := func() error {
 		return root.Execute()
 	}(); err != nil {
-		var ex ExitError
-		if errors.As(err, &ex) {
-			fmt.Fprintf(os.Stderr, "Ginkgo exit error %d: %v\n", ex.Code, err)
-			os.Exit(ex.Code)
-		}
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
 }
