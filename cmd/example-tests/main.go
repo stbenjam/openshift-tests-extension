@@ -30,6 +30,14 @@ func main() {
 
 	// Example using CEL filters
 	ext.AddSuite(e.Suite{
+		Name: "example/fast",
+		Qualifiers: []string{
+			"!labels.exists(l, l==\"SLOW\")",
+		},
+	})
+
+	// Example using CEL filters
+	ext.AddSuite(e.Suite{
 		Name: "example/slow",
 		Qualifiers: []string{
 			"labels.exists(l, l==\"SLOW\")",
