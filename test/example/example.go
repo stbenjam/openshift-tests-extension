@@ -5,6 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 )
 
 var flags struct {
@@ -45,7 +47,7 @@ var _ = Describe("[sig-testing] openshift-tests-extension", func() {
 		panic("oh no")
 	})
 
-	It("should support long-running tests", func() {
+	It("should support long-running tests", g.Slow(), func() {
 		time.Sleep(1 * time.Minute)
 		Expect(true).To(BeTrue())
 	})

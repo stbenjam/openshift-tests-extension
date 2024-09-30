@@ -30,7 +30,27 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("component not found: %s", listOpts.componentFlags.Component)
 			}
 
-			data, err := json.MarshalIndent(ext.GetSpecs(), "", "  ")
+			// TODO: refactor into helper, this is duped elsewhere
+			var foundSuite *extension.Suite
+			if listOpts.suiteFlags.Suite != "" {
+
+				for _, suite := range ext.Suites {
+					if suite.Name == listOpts.suiteFlags.Suite {
+						foundSuite = &suite
+					}
+				}
+				if foundSuite == nil {
+					return fmt.Errorf("couldn't find suite: %s", listOpts.suiteFlags.Suite)
+				}
+			}
+
+			// Filter for suite
+			specs := ext.GetSpecs()
+			if foundSuite != nil && len(foundSuite.Qualifiers) > 0 {
+				specs = specs.MustFilter(foundSuite.Qualifiers)
+			}
+
+			data, err := json.MarshalIndent(specs, "", "  ")
 			if err != nil {
 				return err
 			}

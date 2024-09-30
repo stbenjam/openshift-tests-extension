@@ -22,12 +22,19 @@ func main() {
 
 	ext := e.NewExtension("openshift", "payload", "default")
 
-	//TODO: suites CEL filtering for qualifiers
 	ext.AddSuite(
 		e.Suite{
 			Name:    "example/tests",
 			Parents: []string{"openshift/conformance/parallel"},
 		})
+
+	// Example using CEL filters
+	ext.AddSuite(e.Suite{
+		Name: "example/slow",
+		Qualifiers: []string{
+			"labels.exists(l, l==\"SLOW\")",
+		},
+	})
 
 	// If using Ginkgo, build test specs automatically
 	specs, err := g.BuildExtensionTestSpecsFromOpenShiftGinkgoSuite()

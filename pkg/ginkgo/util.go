@@ -100,6 +100,10 @@ func Informing() ginkgo.Labels {
 	return ginkgo.Label(fmt.Sprintf("Lifecycle:%s", ext.LifecycleInforming))
 }
 
+func Slow() ginkgo.Labels {
+	return ginkgo.Label("SLOW")
+}
+
 func Blocking() ginkgo.Labels {
 	return ginkgo.Label(fmt.Sprintf("Lifecycle:%s", ext.LifecycleBlocking))
 }
