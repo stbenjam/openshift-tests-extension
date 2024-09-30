@@ -53,12 +53,18 @@ type Isolation struct {
 
 type ExtensionTestResults []*ExtensionTestResult
 
+type Result string
+
+var ResultPassed Result = "passed"
+var ResultSkipped Result = "skipped"
+var ResultFailed Result = "failed"
+
 type ExtensionTestResult struct {
 	Name      string     `json:"name"`
 	Duration  int64      `json:"duration"`
 	StartTime *time.Time `json:"startTime"`
 	EndTime   *time.Time `json:"endTime"`
-	Result    string     `json:"result"`
+	Result    Result     `json:"result"`
 	Output    string     `json:"output"`
 	Error     string     `json:"error"`
 	Messages  []string   `json:"messages"`

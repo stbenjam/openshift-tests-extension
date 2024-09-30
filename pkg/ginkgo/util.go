@@ -2,7 +2,9 @@ package ginkgo
 
 import (
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/types"
@@ -12,13 +14,34 @@ import (
 	ext "github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 )
 
+func configureGinkgo() (*types.SuiteConfig, *types.ReporterConfig, error) {
+	if !ginkgo.GetSuite().InPhaseBuildTree() {
+		if err := ginkgo.GetSuite().BuildTree(); err != nil {
+			return nil, nil, errors.Wrapf(err, "couldn't build ginkgo tree")
+		}
+	}
+
+	// Ginkgo initialization
+	ginkgo.GetSuite().ClearBeforeAndAfterSuiteNodes()
+	suiteConfig, reporterConfig := ginkgo.GinkgoConfiguration()
+	suiteConfig.RandomizeAllSpecs = true
+	suiteConfig.Timeout = 24 * time.Hour
+	reporterConfig.NoColor = true
+	reporterConfig.Verbose = true
+	ginkgo.SetReporterConfig(reporterConfig)
+	return &suiteConfig, &reporterConfig, nil
+}
+
 func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite() (ext.ExtensionTestSpecs, error) {
 	var tests []*ext.ExtensionTestSpec
 
-	if !ginkgo.GetSuite().InPhaseBuildTree() {
-		if err := ginkgo.GetSuite().BuildTree(); err != nil {
-			return nil, errors.Wrapf(err, "couldn't build ginkgo tree")
-		}
+	if _, _, err := configureGinkgo(); err != nil {
+		return nil, err
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't get current working directory")
 	}
 
 	ginkgo.GetSuite().WalkTests(func(name string, spec types.TestSpec) {
@@ -27,7 +50,44 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite() (ext.ExtensionTestSpecs, 
 			Labels:    sets.New[string](spec.Labels()...),
 			Lifecycle: GetLifecycle(spec.Labels()),
 			Run: func() *ext.ExtensionTestResult {
-				return RunSpec(spec)
+				suiteConfig, reporterConfig, _ := configureGinkgo()
+
+				result := &ext.ExtensionTestResult{
+					Name: spec.Text(),
+				}
+
+				var summary types.SpecReport
+				ginkgo.GetSuite().RunSpec(spec, ginkgo.Labels{}, "", cwd, ginkgo.GetFailer(), ginkgo.GetWriter(), *suiteConfig, *reporterConfig)
+				for _, report := range ginkgo.GetSuite().GetReport().SpecReports {
+					if report.NumAttempts > 0 {
+						summary = report
+					}
+				}
+
+				result.Output = summary.CapturedGinkgoWriterOutput
+				result.Error = summary.CapturedStdOutErr
+
+				switch {
+				case summary.State == types.SpecStatePassed:
+					result.Result = ext.ResultPassed
+				case summary.State == types.SpecStateSkipped:
+					result.Result = ext.ResultSkipped
+				case summary.State == types.SpecStateFailed, summary.State == types.SpecStatePanicked, summary.State == types.SpecStateInterrupted:
+					result.Result = ext.ResultFailed
+					var messages []string
+					if len(summary.Failure.ForwardedPanic) > 0 {
+						if len(summary.Failure.Location.FullStackTrace) > 0 {
+							messages = append(messages, fmt.Sprintf("\n%s\n", summary.Failure.Location.FullStackTrace))
+						}
+						messages = append(messages, fmt.Sprintf("fail [%s:%d]: Test Panicked: %s", lastFilenameSegment(summary.Failure.Location.FileName), summary.Failure.Location.LineNumber, summary.Failure.ForwardedPanic))
+					}
+					messages = append(messages, fmt.Sprintf("fail [%s:%d]: %s", lastFilenameSegment(summary.Failure.Location.FileName), summary.Failure.Location.LineNumber, summary.Failure.Message))
+					result.Messages = messages
+				default:
+					panic(fmt.Sprintf("test produced unknown outcome: %#v", summary))
+				}
+
+				return result
 			},
 		}
 		tests = append(tests, testCase)

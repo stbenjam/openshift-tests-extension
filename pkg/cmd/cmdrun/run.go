@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -54,14 +55,29 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("some tests couldn't be found: \n\t* %s", strings.Join(notFound, "\n\t* "))
 			}
 
+			// Run each test
 			for _, spec := range specs {
+				startTime := time.Now()
 				res := spec.Run()
+				duration := time.Since(startTime)
+				endTime := startTime.Add(duration)
 				if res == nil {
 					// this shouldn't happen
 					panic(fmt.Sprintf("test produced no result: %s", spec.Name))
 				}
 
-				results = append(results, spec.Run())
+				// If the runner doesn't populate this info, we should set it
+				if res.StartTime != nil {
+					res.StartTime = &startTime
+				}
+				if res.EndTime != nil {
+					res.EndTime = &endTime
+				}
+				if res.Duration == 0 {
+					res.Duration = duration.Milliseconds()
+				}
+
+				results = append(results, res)
 			}
 
 			res, err := json.MarshalIndent(results, "", "  ")
