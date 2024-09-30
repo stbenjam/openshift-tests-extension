@@ -14,10 +14,8 @@ import (
 func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 	var runOpts struct {
 		componentFlags *flags.ComponentFlags
-		suiteFlags     *flags.SuiteFlags
 	}
 	runOpts.componentFlags = flags.NewComponentFlags()
-	runOpts.suiteFlags = flags.NewSuiteFlags()
 
 	cmd := &cobra.Command{
 		Use:          "run-suite NAME",
@@ -29,18 +27,18 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 			if ext == nil {
 				return fmt.Errorf("component not found: %s", runOpts.componentFlags.Component)
 			}
-			if runOpts.suiteFlags.Suite == "" {
+			if len(args) != 1 {
 				cmd.Help()
-				return fmt.Errorf("please specify a suite")
+				return fmt.Errorf("must specify one suite name")
 			}
 			var foundSuite *extension.Suite
 			for _, suite := range ext.Suites {
-				if suite.Name == runOpts.suiteFlags.Suite {
+				if suite.Name == args[0] {
 					foundSuite = &suite
 				}
 			}
 			if foundSuite == nil {
-				return fmt.Errorf("couldn't find suite: %s", runOpts.suiteFlags.Suite)
+				return fmt.Errorf("couldn't find suite: %s", args[0])
 			}
 
 			// Filter for suite
@@ -65,7 +63,6 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 		},
 	}
 	runOpts.componentFlags.BindFlags(cmd.Flags())
-	runOpts.suiteFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }
