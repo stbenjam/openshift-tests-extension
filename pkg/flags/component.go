@@ -2,6 +2,8 @@ package flags
 
 import (
 	"github.com/spf13/pflag"
+
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension"
 )
 
 // ComponentFlags contains information for specifying the component.
@@ -11,7 +13,7 @@ type ComponentFlags struct {
 
 func NewComponentFlags() *ComponentFlags {
 	return &ComponentFlags{
-		Component: "default",
+		Component: extension.DefaultExtension,
 	}
 }
 

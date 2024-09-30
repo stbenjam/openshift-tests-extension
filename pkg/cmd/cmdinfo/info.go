@@ -11,7 +11,7 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
-func NewCommand() *cobra.Command {
+func NewCommand(registry *extension.Registry) *cobra.Command {
 	componentFlags := flags.NewComponentFlags()
 
 	cmd := &cobra.Command{
@@ -19,7 +19,6 @@ func NewCommand() *cobra.Command {
 		Short:        "Info displays available information",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			registry := extension.NewRegistry()
 			extension := registry.Get(componentFlags.Component)
 			if extension == nil {
 				return fmt.Errorf("couldn't find the component %q", componentFlags.Component)

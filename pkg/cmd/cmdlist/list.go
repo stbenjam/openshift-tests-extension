@@ -13,12 +13,11 @@ import (
 
 func NewCommand(registry *extension.Registry) *cobra.Command {
 	var listOpts struct {
-		all        bool
-		envFlags   *flags.EnvironmentFlags
-		suiteFlags *flags.SuiteFlags
+		componentFlags *flags.ComponentFlags
+		suiteFlags     *flags.SuiteFlags
 	}
-	listOpts.envFlags = flags.NewEnvironmentFlags()
-	listOpts.suiteFlags = flags.NewSuiteFlags()
+	listOpts.suiteFlags = flags.NewSuiteFlags() //FIXME: filter on this
+	listOpts.componentFlags = flags.NewComponentFlags()
 
 	cmd := &cobra.Command{
 		Use:          "list",
@@ -26,19 +25,12 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 		Long:         "List the available tests in this binary.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			/*tests := g.ListTests()
-
-			if !listOpts.all {
-				// Filter by env flags
-				envSet := sets.New[string](listOpts.envFlags.Environments...)
-				tests = ginkgofilter.FilterTestCasesByEnvironment(tests, envSet)
+			ext := registry.Get(listOpts.componentFlags.Component)
+			if ext == nil {
+				return fmt.Errorf("component not found: %s", listOpts.componentFlags.Component)
 			}
 
-			if suite := listOpts.suiteFlags.Suite; suite != "" {
-				tests = ginkgofilter.FilterTestCasesBySuite(tests, suite)
-			}*/
-
-			data, err := json.MarshalIndent(registry.Get("default").GetSpecs(), "", "  ")
+			data, err := json.MarshalIndent(ext.GetSpecs(), "", "  ")
 			if err != nil {
 				return err
 			}
@@ -46,8 +38,6 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&listOpts.all, "all", false, "Show all tests, with no environment filtering")
-	listOpts.envFlags.BindFlags(cmd.Flags())
 	listOpts.suiteFlags.BindFlags(cmd.Flags())
 
 	return cmd

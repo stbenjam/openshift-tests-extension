@@ -9,9 +9,7 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/spf13/cobra"
 
-	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdinfo"
-	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdlist"
-	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdrun"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd"
 	e "github.com/openshift-eng/openshift-tests-extension/pkg/extension"
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 
@@ -39,7 +37,7 @@ func main() {
 	// Add label to all specs
 	// specs = specs.AddLabel("SLOW")
 
-	// Specs can be filtered...
+	// Specs can be globally filtered...
 	// specs = specs.MustFilter([]string{`name.contains("filter")`})
 
 	// Or walked...
@@ -48,12 +46,7 @@ func main() {
 	//		e.Labels.Insert("SLOW")
 	//	}
 	//})
-
 	ext.AddSpecs(specs)
-
-	// If not using gingko build the test specs manually
-	// TODO:example
-
 	registry.Register(ext)
 
 	root := &cobra.Command{
@@ -61,11 +54,7 @@ func main() {
 	}
 
 	// TODO: Wire up extension stuff
-	root.AddCommand(
-		cmdrun.NewCommand("foobar"),
-		cmdlist.NewCommand(registry),
-		cmdinfo.NewCommand(),
-	)
+	root.AddCommand(cmd.DefaultExtensionCommands(registry)...)
 
 	gomega.RegisterFailHandler(ginkgo.Fail)
 
