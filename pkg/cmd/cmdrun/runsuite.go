@@ -59,7 +59,7 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 			}
 			fmt.Println(string(j))
 
-			return nil
+			return results.CheckOverallResult()
 		},
 	}
 	runOpts.componentFlags.BindFlags(cmd.Flags())
