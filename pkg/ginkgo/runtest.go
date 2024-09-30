@@ -11,6 +11,8 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/types"
+
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 )
 
 // TestOptions handles running a single test.
@@ -32,6 +34,10 @@ func ListTests() []*TestCase {
 	tests := testsForSuite()
 	sort.Slice(tests, func(i, j int) bool { return tests[i].Name < tests[j].Name })
 	return tests
+}
+
+func RunSpec(spec types.TestSpec) *extensiontests.ExtensionTestResult {
+	return nil // TODO
 }
 
 func (opt *TestOptions) RunTest(args []string, suiteDescription string) error {

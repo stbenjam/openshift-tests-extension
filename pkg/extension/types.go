@@ -1,8 +1,6 @@
-package extensions
+package extension
 
-import (
-	"github.com/openshift-eng/openshift-tests-extension/pkg/extensions/testspec"
-)
+import "github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 
 const CurrentExtensionVersion = "v1"
 
@@ -16,14 +14,14 @@ type Extension struct {
 	Suites []Suite `json:"suites"`
 
 	// Private data
-	specs []*testspec.ExtensionTestSpec
+	specs []*extensiontests.ExtensionTestSpec
 }
 
-func (e *Extension) GetSpecs() []*testspec.ExtensionTestSpec {
+func (e *Extension) GetSpecs() []*extensiontests.ExtensionTestSpec {
 	return e.specs
 }
 
-func (e *Extension) AddSpecs(specs []*testspec.ExtensionTestSpec) {
+func (e *Extension) AddSpecs(specs []*extensiontests.ExtensionTestSpec) {
 	e.specs = append(e.specs, specs...)
 }
 

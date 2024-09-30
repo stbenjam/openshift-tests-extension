@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/openshift-eng/openshift-tests-extension/pkg/extensions"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
@@ -19,7 +19,7 @@ func NewCommand() *cobra.Command {
 		Short:        "Info displays available information",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			registry := extensions.NewRegistry()
+			registry := extension.NewRegistry()
 			extension := registry.Get(componentFlags.Component)
 			if extension == nil {
 				return fmt.Errorf("couldn't find the component %q", componentFlags.Component)

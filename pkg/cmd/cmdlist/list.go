@@ -7,11 +7,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/openshift-eng/openshift-tests-extension/pkg/extensions"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
-func NewCommand(registry *extensions.Registry) *cobra.Command {
+func NewCommand(registry *extension.Registry) *cobra.Command {
 	var listOpts struct {
 		all        bool
 		envFlags   *flags.EnvironmentFlags

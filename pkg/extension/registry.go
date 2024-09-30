@@ -1,4 +1,4 @@
-package extensions
+package extension
 
 type Registry struct {
 	extensions map[string]*Extension

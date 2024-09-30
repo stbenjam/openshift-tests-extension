@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdinfo"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdlist"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdrun"
-	e "github.com/openshift-eng/openshift-tests-extension/pkg/extensions"
+	e "github.com/openshift-eng/openshift-tests-extension/pkg/extension"
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 
 	// If using ginkgo, import your tests here
@@ -23,15 +24,31 @@ func main() {
 	registry := e.NewRegistry()
 
 	ext := e.NewExtension("openshift", "payload", "default")
-	ext.AddSuite(e.Suite{Name: "openshift/conformance/parallel"})
 	ext.AddSuite(e.Suite{Name: "example/tests", Parents: []string{"openshift/conformance/parallel"}})
 
-	// If using Gingko, build test specs automatically
+	// If using Ginkgo, build test specs automatically
 	specs, err := g.BuildExtensionTestSpecsFromOpenShiftGinkgoSuite()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error())
 		os.Exit(1)
 	}
+
+	// You can also manually build a test specs list from other testing tooling
+	// TODO: example
+
+	// Add label to all specs
+	// specs = specs.AddLabel("SLOW")
+
+	// Specs can be filtered...
+	// specs = specs.MustFilter([]string{`name.contains("filter")`})
+
+	// Or walked...
+	// specs = specs.Walk(func(e *extensiontests.ExtensionTestSpec) {
+	//	if strings.Contains(e.Name, "scale up") {
+	//		e.Labels.Insert("SLOW")
+	//	}
+	//})
+
 	ext.AddSpecs(specs)
 
 	// If not using gingko build the test specs manually
@@ -55,7 +72,8 @@ func main() {
 	if err := func() error {
 		return root.Execute()
 	}(); err != nil {
-		if ex, ok := err.(ExitError); ok {
+		var ex ExitError
+		if errors.As(err, &ex) {
 			fmt.Fprintf(os.Stderr, "Ginkgo exit error %d: %v\n", ex.Code, err)
 			os.Exit(ex.Code)
 		}

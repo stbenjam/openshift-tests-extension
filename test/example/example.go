@@ -28,7 +28,7 @@ var _ = Describe("Simple Tests", func() {
 		Expect(true).To(BeTrue())
 	})
 
-	It("should only run on AWS with annotation [Include:Platform:AWS]", func() {
+	It("should only run on AWS with annotation scale up [Include:Platform:AWS]", func() {
 		Expect(true).To(BeTrue())
 	})
 })

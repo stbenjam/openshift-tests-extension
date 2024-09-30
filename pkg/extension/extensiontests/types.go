@@ -1,21 +1,27 @@
-package testspec
+package extensiontests
 
-import "github.com/onsi/ginkgo/v2/types"
+import (
+	"time"
+
+	"k8s.io/apimachinery/pkg/util/sets"
+)
 
 type Lifecycle string
 
 var LifecycleInforming Lifecycle = "informing"
 var LifecycleBlocking Lifecycle = "blocking"
 
+type ExtensionTestSpecs []*ExtensionTestSpec
+
 type ExtensionTestSpec struct {
 	Name string `json:"name"`
 
 	// OtherNames contains a list of historical names for this test. If the test gets renamed in the future,
 	// this slice must report all the previous names for this test to preserve history.
-	OtherNames []string `json:"other_names"`
+	OtherNames sets.Set[string] `json:"otherNames"`
 
 	// Labels are single string values to apply to the test spec
-	Labels []string `json:"labels"`
+	Labels sets.Set[string] `json:"labels"`
 
 	// Tags are key:value pairs
 	Tags map[string]string `json:"tags"`
@@ -30,7 +36,7 @@ type ExtensionTestSpec struct {
 	Lifecycle Lifecycle `json:"lifecycle"`
 
 	// Run invokes a test (TODO:relace gingko spec state with our own)
-	Run func() types.SpecState `json:"-"`
+	Run func() *ExtensionTestResult `json:"-"`
 }
 
 type Resources struct {
@@ -43,4 +49,15 @@ type Resources struct {
 type Isolation struct {
 	Mode     string   `json:"mode"`
 	Conflict []string `json:"conflict"`
+}
+
+type ExtensionTestResult struct {
+	Name      string     `json:"name"`
+	Duration  int64      `json:"duration"`
+	StartTime *time.Time `json:"startTime"`
+	EndTime   *time.Time `json:"endTime"`
+	Result    string     `json:"result"`
+	Output    string     `json:"output"`
+	Error     string     `json:"error"`
+	Messages  []string   `json:"messages"`
 }

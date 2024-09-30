@@ -1,4 +1,4 @@
-package extensions
+package extension
 
 import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/version"
