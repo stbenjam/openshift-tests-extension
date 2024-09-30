@@ -60,7 +60,7 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 				results = append(results, res)
 			}
 
-			res, err := json.MarshalIndent(results, "", "  ")
+			res, err := json.Marshal(results)
 			if err != nil {
 				return errors.Wrap(err, "couldn't marshal results")
 			}

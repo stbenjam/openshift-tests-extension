@@ -53,7 +53,7 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 				results = append(results, res)
 			}
 
-			j, err := json.MarshalIndent(results, "", "  ")
+			j, err := json.Marshal(results)
 			if err != nil {
 				return fmt.Errorf("failed to marshal results: %v", err)
 			}
