@@ -39,7 +39,7 @@ func main() {
 	// If using Ginkgo, build test specs automatically
 	specs, err := g.BuildExtensionTestSpecsFromOpenShiftGinkgoSuite()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error())
+		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 

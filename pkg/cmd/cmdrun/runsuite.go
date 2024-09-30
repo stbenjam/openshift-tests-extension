@@ -28,7 +28,6 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("component not found: %s", runOpts.componentFlags.Component)
 			}
 			if len(args) != 1 {
-				cmd.Help()
 				return fmt.Errorf("must specify one suite name")
 			}
 			var foundSuite *extension.Suite
