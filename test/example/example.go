@@ -1,32 +1,52 @@
 package example
 
 import (
-	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 )
 
-var _ = Describe("Simple Tests", func() {
-	It("should print 'Hello, OpenShift!'", func() {
-		fmt.Println("Hello, OpenShift!")
-		Expect(true).To(BeTrue()) // This ensures the test passes
+var flags struct {
+	beforeAllCount  int
+	beforeEachCount int
+}
+
+var _ = Describe("[sig-testing] openshift-tests-extension ordered", Ordered, func() {
+	BeforeAll(func() {
+		flags.beforeAllCount++
 	})
 
-	It("should fail and print a sad face",
-		g.Informing(),
-		func() {
-			fmt.Println(":(")
-			Expect(true).To(BeFalse()) // This makes the test fail
-		})
+	It("should run beforeAll once", func() {
+		Expect(flags.beforeAllCount).To(Equal(1))
+	})
+})
 
-	It("should filter test results by label", Labels([]string{"Skipped:Platform:AWS"}), func() {
+var _ = Describe("[sig-testing] openshift-tests-extension setup", func() {
+	BeforeEach(func() {
+		flags.beforeEachCount++
+	})
+
+	It("should support beforeEach", func() {
+		Expect(flags.beforeEachCount).To(BeNumerically(">", 0))
+	})
+})
+
+var _ = Describe("[sig-testing] openshift-tests-extension", func() {
+	It("should support passing tests", func() {
 		Expect(true).To(BeTrue())
 	})
 
-	It("should only run on AWS with annotation scale up [Include:Platform:AWS]", func() {
+	It("should support failing tests", func() {
+		Expect(1).To(Equal(2))
+	})
+
+	It("should support panicking tests", func() {
+		panic("oh no")
+	})
+
+	It("should support long-running tests", func() {
+		time.Sleep(1 * time.Minute)
 		Expect(true).To(BeTrue())
 	})
 })

@@ -19,7 +19,7 @@ type Extension struct {
 	specs []*extensiontests.ExtensionTestSpec
 }
 
-func (e *Extension) GetSpecs() []*extensiontests.ExtensionTestSpec {
+func (e *Extension) GetSpecs() extensiontests.ExtensionTestSpecs {
 	return e.specs
 }
 

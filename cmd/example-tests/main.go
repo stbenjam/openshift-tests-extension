@@ -23,7 +23,11 @@ func main() {
 	ext := e.NewExtension("openshift", "payload", "default")
 
 	//TODO: suites CEL filtering for qualifiers
-	ext.AddSuite(e.Suite{Name: "example/tests", Parents: []string{"openshift/conformance/parallel"}})
+	ext.AddSuite(
+		e.Suite{
+			Name:    "example/tests",
+			Parents: []string{"openshift/conformance/parallel"},
+		})
 
 	// If using Ginkgo, build test specs automatically
 	specs, err := g.BuildExtensionTestSpecsFromOpenShiftGinkgoSuite()

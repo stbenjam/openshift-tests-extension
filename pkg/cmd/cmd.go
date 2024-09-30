@@ -11,7 +11,8 @@ import (
 
 func DefaultExtensionCommands(registry *extension.Registry) []*cobra.Command {
 	return []*cobra.Command{
-		cmdrun.NewCommand(registry),
+		cmdrun.NewRunSuiteCommand(registry),
+		cmdrun.NewRunTestCommand(registry),
 		cmdlist.NewCommand(registry),
 		cmdinfo.NewCommand(registry),
 	}
