@@ -30,6 +30,7 @@ func (specs ExtensionTestSpecs) Filter(celExprs []string) (ExtensionTestSpecs, e
 
 	env, err := cel.NewEnv(
 		cel.Declarations(
+			decls.NewVar("source", decls.String),
 			decls.NewVar("name", decls.String),
 			decls.NewVar("other_names", decls.NewListType(decls.String)),
 			decls.NewVar("labels", decls.NewListType(decls.String)),

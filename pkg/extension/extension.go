@@ -42,3 +42,7 @@ func (e *Extension) FindSpecByName(name string) (*extensiontests.ExtensionTestSp
 
 	return nil, fmt.Errorf("spec not found: %s", name)
 }
+
+func (e *Component) Identifier() string {
+	return fmt.Sprintf("%s:%s:%s", e.Product, e.Kind, e.Name)
+}

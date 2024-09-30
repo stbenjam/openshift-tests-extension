@@ -29,6 +29,9 @@ type ExtensionTestSpec struct {
 	// Resources gives optional information about what's required to run this test.
 	Resources Resources `json:"resources"`
 
+	// Source is the origin of the test.
+	Source string `json:"source"`
+
 	// Lifecycle informs the executor whether the test is informing only, and should not cause the
 	// overall job run to fail, or if it's blocking where a failure of the test is fatal.
 	// Informing lifecycle tests can be used temporarily to gather information about a test's stability.
@@ -61,6 +64,7 @@ var ResultFailed Result = "failed"
 
 type ExtensionTestResult struct {
 	Name      string     `json:"name"`
+	Lifecycle Lifecycle  `json:"lifecycle"`
 	Duration  int64      `json:"duration"`
 	StartTime *time.Time `json:"startTime"`
 	EndTime   *time.Time `json:"endTime"`

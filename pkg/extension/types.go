@@ -1,6 +1,8 @@
 package extension
 
-import "github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
+import (
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
+)
 
 const CurrentExtensionVersion = "v1"
 
@@ -21,7 +23,11 @@ func (e *Extension) GetSpecs() []*extensiontests.ExtensionTestSpec {
 	return e.specs
 }
 
-func (e *Extension) AddSpecs(specs []*extensiontests.ExtensionTestSpec) {
+func (e *Extension) AddSpecs(specs extensiontests.ExtensionTestSpecs) {
+	specs.Walk(func(spec *extensiontests.ExtensionTestSpec) {
+		spec.Source = e.Component.Identifier()
+	})
+
 	e.specs = append(e.specs, specs...)
 }
 

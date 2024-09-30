@@ -66,11 +66,13 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 					panic(fmt.Sprintf("test produced no result: %s", spec.Name))
 				}
 
+				res.Lifecycle = spec.Lifecycle
+
 				// If the runner doesn't populate this info, we should set it
-				if res.StartTime != nil {
+				if res.StartTime == nil {
 					res.StartTime = &startTime
 				}
-				if res.EndTime != nil {
+				if res.EndTime == nil {
 					res.EndTime = &endTime
 				}
 				if res.Duration == 0 {
