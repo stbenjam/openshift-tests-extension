@@ -53,7 +53,6 @@ func main() {
 		Long: "OpenShift Tests Extension Example",
 	}
 
-	// TODO: Wire up extension stuff
 	root.AddCommand(cmd.DefaultExtensionCommands(registry)...)
 
 	gomega.RegisterFailHandler(ginkgo.Fail)

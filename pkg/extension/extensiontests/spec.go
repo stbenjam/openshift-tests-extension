@@ -65,7 +65,7 @@ func (specs ExtensionTestSpecs) Filter(celExprs []string) (ExtensionTestSpecs, e
 			out, _, err := prg.Eval(map[string]interface{}{
 				"name":        spec.Name,
 				"other_names": spec.OtherNames,
-				"labels":      spec.Labels,
+				"labels":      spec.Labels.UnsortedList(),
 				"tags":        spec.Tags,
 			})
 			if err != nil {

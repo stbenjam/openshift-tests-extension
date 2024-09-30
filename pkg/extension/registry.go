@@ -13,6 +13,15 @@ func NewRegistry() *Registry {
 	return &r
 }
 
+func (r *Registry) Walk(walkFn func(*Extension)) {
+	for k := range r.extensions {
+		if k == DefaultExtension {
+			continue
+		}
+		walkFn(r.extensions[k])
+	}
+}
+
 func (r *Registry) Get(name string) *Extension {
 	return r.extensions[name]
 }

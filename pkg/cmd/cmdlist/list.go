@@ -19,8 +19,8 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 	listOpts.suiteFlags = flags.NewSuiteFlags() //FIXME: filter on this
 	listOpts.componentFlags = flags.NewComponentFlags()
 
-	cmd := &cobra.Command{
-		Use:          "list",
+	listTestsCmd := &cobra.Command{
+		Use:          "tests",
 		Short:        "List available tests",
 		Long:         "List the available tests in this binary.",
 		SilenceUsage: true,
@@ -38,7 +38,32 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 			return nil
 		},
 	}
-	listOpts.suiteFlags.BindFlags(cmd.Flags())
+	listOpts.suiteFlags.BindFlags(listTestsCmd.Flags())
+	listOpts.componentFlags.BindFlags(listTestsCmd.Flags())
 
-	return cmd
+	listComponentsCmd := &cobra.Command{
+		Use:          "components",
+		Short:        "List available components",
+		Long:         "List the available components in this binary.",
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			registry.Walk(func(e *extension.Extension) {
+				fmt.Printf("%s:%s:%s\n", e.Component.Product, e.Component.Kind, e.Component.Name)
+			})
+			return nil
+		},
+	}
+
+	var listCmd = &cobra.Command{
+		Use:   "list [subcommand]",
+		Short: "List items",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return listTestsCmd.RunE(cmd, args)
+		},
+	}
+	listOpts.suiteFlags.BindFlags(listCmd.Flags())
+	listOpts.componentFlags.BindFlags(listCmd.Flags())
+	listCmd.AddCommand(listTestsCmd, listComponentsCmd)
+
+	return listCmd
 }

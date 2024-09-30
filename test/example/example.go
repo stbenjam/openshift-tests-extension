@@ -9,8 +9,6 @@ import (
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 )
 
-// FIXME(stbenjam): ginkgo doesn't allow "/" in label names, so it's hard to use this for our existing suite names,
-// maybe convert "." to "/" always?
 var _ = Describe("Simple Tests", func() {
 	It("should print 'Hello, OpenShift!'", func() {
 		fmt.Println("Hello, OpenShift!")
