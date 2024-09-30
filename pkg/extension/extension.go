@@ -1,6 +1,9 @@
 package extension
 
 import (
+	"fmt"
+
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/version"
 )
 
@@ -28,4 +31,14 @@ func (e *Extension) AddSuite(suite Suite) *Extension {
 	}
 
 	return e
+}
+
+func (e *Extension) FindSpecByName(name string) (*extensiontests.ExtensionTestSpec, error) {
+	for i := range e.specs {
+		if e.specs[i].Name == name {
+			return e.specs[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("spec not found: %s", name)
 }

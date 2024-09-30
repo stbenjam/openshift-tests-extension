@@ -51,6 +51,8 @@ type Isolation struct {
 	Conflict []string `json:"conflict"`
 }
 
+type ExtensionTestResults []*ExtensionTestResult
+
 type ExtensionTestResult struct {
 	Name      string     `json:"name"`
 	Duration  int64      `json:"duration"`
