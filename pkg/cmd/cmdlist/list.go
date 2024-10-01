@@ -31,24 +31,23 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("component not found: %s", listOpts.componentFlags.Component)
 			}
 
-			// TODO: refactor into helper, this is duped elsewhere
+			// Find suite, if specified
 			var foundSuite *extension.Suite
+			var err error
 			if listOpts.suiteFlags.Suite != "" {
-
-				for _, suite := range ext.Suites {
-					if suite.Name == listOpts.suiteFlags.Suite {
-						foundSuite = &suite
-					}
-				}
-				if foundSuite == nil {
-					return fmt.Errorf("couldn't find suite: %s", listOpts.suiteFlags.Suite)
+				foundSuite, err = ext.GetSuite(listOpts.suiteFlags.Suite)
+				if err != nil {
+					return err
 				}
 			}
 
 			// Filter for suite
 			specs := ext.GetSpecs()
-			if foundSuite != nil && len(foundSuite.Qualifiers) > 0 {
-				specs = specs.MustFilter(foundSuite.Qualifiers)
+			if foundSuite != nil {
+				specs, err = specs.Filter(foundSuite.Qualifiers)
+				if err != nil {
+					return err
+				}
 			}
 
 			data, err := listOpts.outputFlags.Marshal(specs)
