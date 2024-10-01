@@ -12,39 +12,39 @@ import (
 )
 
 func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
-	var runOpts struct {
+	opts := struct {
 		componentFlags *flags.ComponentFlags
 		nameFlags      *flags.NamesFlags
 		outputFlags    *flags.OutputFlags
+	}{
+		componentFlags: flags.NewComponentFlags(),
+		nameFlags:      flags.NewNamesFlags(),
+		outputFlags:    flags.NewOutputFlags(),
 	}
-	runOpts.componentFlags = flags.NewComponentFlags()
-	runOpts.nameFlags = flags.NewNamesFlags()
-	runOpts.outputFlags = flags.NewOutputFlags()
 
 	cmd := &cobra.Command{
-		Use:          "run-test NAME",
-		Short:        "RunTest a single test by name",
-		Long:         "Execute a single test.",
+		Use:          "run-test [-n NAME...] [NAME]",
+		Short:        "Runs tests by name",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ext := registry.Get(runOpts.componentFlags.Component)
+			ext := registry.Get(opts.componentFlags.Component)
 			if ext == nil {
-				return fmt.Errorf("component not found: %s", runOpts.componentFlags.Component)
+				return fmt.Errorf("component not found: %s", opts.componentFlags.Component)
 			}
 			if len(args) > 1 {
 				return fmt.Errorf("use --names to specify more than one test")
 			}
-			runOpts.nameFlags.Names = append(runOpts.nameFlags.Names, args...)
-			if len(runOpts.nameFlags.Names) == 0 {
+			opts.nameFlags.Names = append(opts.nameFlags.Names, args...)
+			if len(opts.nameFlags.Names) == 0 {
 				return fmt.Errorf("must specify at least one test")
 			}
 
-			specs, err := ext.FindSpecsByName(runOpts.nameFlags.Names...)
+			specs, err := ext.FindSpecsByName(opts.nameFlags.Names...)
 			if err != nil {
 				return err
 			}
 
-			w, err := extensiontests.NewResultWriter(os.Stdout, extensiontests.ResultFormat(runOpts.outputFlags.Output))
+			w, err := extensiontests.NewResultWriter(os.Stdout, extensiontests.ResultFormat(opts.outputFlags.Output))
 			if err != nil {
 				return err
 			}
@@ -53,9 +53,9 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 			return specs.Run(w)
 		},
 	}
-	runOpts.componentFlags.BindFlags(cmd.Flags())
-	runOpts.nameFlags.BindFlags(cmd.Flags())
-	runOpts.outputFlags.BindFlags(cmd.Flags())
+	opts.componentFlags.BindFlags(cmd.Flags())
+	opts.nameFlags.BindFlags(cmd.Flags())
+	opts.outputFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }

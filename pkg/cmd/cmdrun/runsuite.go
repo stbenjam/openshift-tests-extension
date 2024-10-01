@@ -13,27 +13,28 @@ import (
 )
 
 func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
-	var runOpts struct {
+	opts := struct {
 		componentFlags *flags.ComponentFlags
 		outputFlags    *flags.OutputFlags
+	}{
+		componentFlags: flags.NewComponentFlags(),
+		outputFlags:    flags.NewOutputFlags(),
 	}
-	runOpts.componentFlags = flags.NewComponentFlags()
-	runOpts.outputFlags = flags.NewOutputFlags()
 
 	cmd := &cobra.Command{
 		Use:          "run-suite NAME",
 		Short:        "Run a group of tests by suite",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ext := registry.Get(runOpts.componentFlags.Component)
+			ext := registry.Get(opts.componentFlags.Component)
 			if ext == nil {
-				return fmt.Errorf("component not found: %s", runOpts.componentFlags.Component)
+				return fmt.Errorf("component not found: %s", opts.componentFlags.Component)
 			}
 			if len(args) != 1 {
 				return fmt.Errorf("must specify one suite name")
 			}
 
-			w, err := extensiontests.NewResultWriter(os.Stdout, extensiontests.ResultFormat(runOpts.outputFlags.Output))
+			w, err := extensiontests.NewResultWriter(os.Stdout, extensiontests.ResultFormat(opts.outputFlags.Output))
 			if err != nil {
 				return err
 			}
@@ -52,8 +53,8 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 			return specs.Run(w)
 		},
 	}
-	runOpts.componentFlags.BindFlags(cmd.Flags())
-	runOpts.outputFlags.BindFlags(cmd.Flags())
+	opts.componentFlags.BindFlags(cmd.Flags())
+	opts.outputFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }

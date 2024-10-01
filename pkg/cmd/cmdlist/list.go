@@ -10,32 +10,32 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
-func NewCommand(registry *extension.Registry) *cobra.Command {
-	var listOpts struct {
+func NewListCommand(registry *extension.Registry) *cobra.Command {
+	opts := struct {
 		componentFlags *flags.ComponentFlags
 		suiteFlags     *flags.SuiteFlags
 		outputFlags    *flags.OutputFlags
+	}{
+		suiteFlags:     flags.NewSuiteFlags(),
+		componentFlags: flags.NewComponentFlags(),
+		outputFlags:    flags.NewOutputFlags(),
 	}
-	listOpts.suiteFlags = flags.NewSuiteFlags() //FIXME: filter on this
-	listOpts.componentFlags = flags.NewComponentFlags()
-	listOpts.outputFlags = flags.NewOutputFlags()
 
 	listTestsCmd := &cobra.Command{
 		Use:          "tests",
 		Short:        "List available tests",
-		Long:         "List the available tests in this binary.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ext := registry.Get(listOpts.componentFlags.Component)
+			ext := registry.Get(opts.componentFlags.Component)
 			if ext == nil {
-				return fmt.Errorf("component not found: %s", listOpts.componentFlags.Component)
+				return fmt.Errorf("component not found: %s", opts.componentFlags.Component)
 			}
 
 			// Find suite, if specified
 			var foundSuite *extension.Suite
 			var err error
-			if listOpts.suiteFlags.Suite != "" {
-				foundSuite, err = ext.GetSuite(listOpts.suiteFlags.Suite)
+			if opts.suiteFlags.Suite != "" {
+				foundSuite, err = ext.GetSuite(opts.suiteFlags.Suite)
 				if err != nil {
 					return err
 				}
@@ -50,7 +50,7 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 				}
 			}
 
-			data, err := listOpts.outputFlags.Marshal(specs)
+			data, err := opts.outputFlags.Marshal(specs)
 			if err != nil {
 				return err
 			}
@@ -58,14 +58,13 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 			return nil
 		},
 	}
-	listOpts.suiteFlags.BindFlags(listTestsCmd.Flags())
-	listOpts.componentFlags.BindFlags(listTestsCmd.Flags())
-	listOpts.outputFlags.BindFlags(listTestsCmd.Flags())
+	opts.suiteFlags.BindFlags(listTestsCmd.Flags())
+	opts.componentFlags.BindFlags(listTestsCmd.Flags())
+	opts.outputFlags.BindFlags(listTestsCmd.Flags())
 
 	listComponentsCmd := &cobra.Command{
 		Use:          "components",
 		Short:        "List available components",
-		Long:         "List the available components in this binary.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registry.Walk(func(e *extension.Extension) {
@@ -82,9 +81,9 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 			return listTestsCmd.RunE(cmd, args)
 		},
 	}
-	listOpts.suiteFlags.BindFlags(listCmd.Flags())
-	listOpts.componentFlags.BindFlags(listCmd.Flags())
-	listOpts.outputFlags.BindFlags(listCmd.Flags())
+	opts.suiteFlags.BindFlags(listCmd.Flags())
+	opts.componentFlags.BindFlags(listCmd.Flags())
+	opts.outputFlags.BindFlags(listCmd.Flags())
 	listCmd.AddCommand(listTestsCmd, listComponentsCmd)
 
 	return listCmd

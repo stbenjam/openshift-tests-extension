@@ -4,7 +4,7 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 )
 
-const CurrentExtensionVersion = "v1"
+const CurrentExtensionVersion = "v1alpha"
 
 // Extension represents an extension to openshift-tests.
 type Extension struct {

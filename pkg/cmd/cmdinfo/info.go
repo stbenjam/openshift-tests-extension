@@ -11,7 +11,7 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
-func NewCommand(registry *extension.Registry) *cobra.Command {
+func NewInfoCommand(registry *extension.Registry) *cobra.Command {
 	componentFlags := flags.NewComponentFlags()
 
 	cmd := &cobra.Command{
