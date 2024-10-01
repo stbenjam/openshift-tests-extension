@@ -8,7 +8,7 @@ LDFLAGS := -X '$(GO_PKG_NAME)/pkg/version.CommitFromGit=$(GIT_COMMIT)' \
            -X '$(GO_PKG_NAME)/pkg/version.BuildDate=$(BUILD_DATE)' \
            -X '$(GO_PKG_NAME)/pkg/version.GitTreeState=$(GIT_TREE_STATE)'
 
-.PHONY: verify test lint clean unit integration
+.PHONY: verify test lint clean unit integration example-tests framework-tests
 
 all: unit build integration
 

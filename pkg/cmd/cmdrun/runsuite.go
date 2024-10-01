@@ -49,16 +49,16 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 			}
 
 			// Run specs
+			w, err := extensiontests.NewResultWriter(os.Stdout, extensiontests.ResultFormat(runOpts.outputFlags.Output))
+			if err != nil {
+				return err
+			}
 			for _, spec := range specs {
 				res := runSpec(spec)
+				w.Write(res)
 				results = append(results, res)
 			}
-
-			j, err := runOpts.outputFlags.Marshal(results)
-			if err != nil {
-				return fmt.Errorf("failed to marshal results: %v", err)
-			}
-			fmt.Println(string(j))
+			w.Flush()
 
 			if failed := results.CheckOverallResult(); failed != nil {
 				os.Exit(1) // exit 1 without letting cobra print the error and pollute our output
