@@ -8,6 +8,8 @@ LDFLAGS := -X '$(GO_PKG_NAME)/pkg/version.CommitFromGit=$(GIT_COMMIT)' \
            -X '$(GO_PKG_NAME)/pkg/version.BuildDate=$(BUILD_DATE)' \
            -X '$(GO_PKG_NAME)/pkg/version.GitTreeState=$(GIT_TREE_STATE)'
 
+.PHONY: verify test lint clean
+
 all: test build
 
 verify: lint

@@ -8,6 +8,7 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/types"
+	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -30,7 +31,11 @@ func configureGinkgo() (*types.SuiteConfig, *types.ReporterConfig, error) {
 	reporterConfig.Verbose = true
 	ginkgo.SetReporterConfig(reporterConfig)
 
+	// Throw away all output
 	ginkgo.GinkgoWriter = GinkgoDiscard
+
+	gomega.RegisterFailHandler(ginkgo.Fail)
+
 	return &suiteConfig, &reporterConfig, nil
 }
 
