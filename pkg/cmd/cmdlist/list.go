@@ -1,7 +1,6 @@
 package cmdlist
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -15,9 +14,11 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 	var listOpts struct {
 		componentFlags *flags.ComponentFlags
 		suiteFlags     *flags.SuiteFlags
+		outputFlags    *flags.OutputFlags
 	}
 	listOpts.suiteFlags = flags.NewSuiteFlags() //FIXME: filter on this
 	listOpts.componentFlags = flags.NewComponentFlags()
+	listOpts.outputFlags = flags.NewOutputFlags()
 
 	listTestsCmd := &cobra.Command{
 		Use:          "tests",
@@ -50,7 +51,7 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 				specs = specs.MustFilter(foundSuite.Qualifiers)
 			}
 
-			data, err := json.MarshalIndent(specs, "", "  ")
+			data, err := listOpts.outputFlags.Marshal(specs)
 			if err != nil {
 				return err
 			}
@@ -60,6 +61,7 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 	}
 	listOpts.suiteFlags.BindFlags(listTestsCmd.Flags())
 	listOpts.componentFlags.BindFlags(listTestsCmd.Flags())
+	listOpts.outputFlags.BindFlags(listTestsCmd.Flags())
 
 	listComponentsCmd := &cobra.Command{
 		Use:          "components",
@@ -83,6 +85,7 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 	}
 	listOpts.suiteFlags.BindFlags(listCmd.Flags())
 	listOpts.componentFlags.BindFlags(listCmd.Flags())
+	listOpts.outputFlags.BindFlags(listCmd.Flags())
 	listCmd.AddCommand(listTestsCmd, listComponentsCmd)
 
 	return listCmd
