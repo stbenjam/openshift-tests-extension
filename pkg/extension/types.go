@@ -16,19 +16,7 @@ type Extension struct {
 	Suites []Suite `json:"suites"`
 
 	// Private data
-	specs []*extensiontests.ExtensionTestSpec
-}
-
-func (e *Extension) GetSpecs() extensiontests.ExtensionTestSpecs {
-	return e.specs
-}
-
-func (e *Extension) AddSpecs(specs extensiontests.ExtensionTestSpecs) {
-	specs.Walk(func(spec *extensiontests.ExtensionTestSpec) {
-		spec.Source = e.Component.Identifier()
-	})
-
-	e.specs = append(e.specs, specs...)
+	specs extensiontests.ExtensionTestSpecs
 }
 
 // Source contains the details of the commit and source URL.

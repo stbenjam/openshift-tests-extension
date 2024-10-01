@@ -80,7 +80,6 @@ func main() {
 	if err := func() error {
 		return root.Execute()
 	}(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
 }

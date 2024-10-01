@@ -3,9 +3,7 @@ package cmdrun
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/openshift-eng/openshift-tests-extension/pkg/extension"
@@ -41,37 +39,18 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("must specify at least one test")
 			}
 
-			var results extensiontests.ExtensionTestResults
-			var specs extensiontests.ExtensionTestSpecs
-			var notFound []string
-			for _, name := range runOpts.nameFlags.Names {
-				spec, err := ext.FindSpecByName(name)
-				if err != nil {
-					notFound = append(notFound, name)
-					continue
-				}
-				specs = append(specs, spec)
-			}
-			if len(notFound) > 0 {
-				return fmt.Errorf("some tests couldn't be found: \n\t* %s", strings.Join(notFound, "\n\t* "))
-			}
-
-			// Run each test
-			for _, spec := range specs {
-				res := runSpec(spec)
-				results = append(results, res)
-			}
-
-			res, err := runOpts.outputFlags.Marshal(results)
+			specs, err := ext.FindSpecsByName(runOpts.nameFlags.Names...)
 			if err != nil {
-				return errors.Wrap(err, "couldn't marshal results")
+				return err
 			}
 
-			fmt.Println(string(res))
-			if results.CheckOverallResult() != nil {
-				os.Exit(1) // exit 1 without letting cobra print the error and pollute our output
+			w, err := extensiontests.NewResultWriter(os.Stdout, extensiontests.ResultFormat(runOpts.outputFlags.Output))
+			if err != nil {
+				return err
 			}
-			return nil
+			defer w.Flush()
+
+			return specs.Run(w)
 		},
 	}
 	runOpts.componentFlags.BindFlags(cmd.Flags())

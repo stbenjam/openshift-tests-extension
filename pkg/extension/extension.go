@@ -2,8 +2,9 @@ package extension
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
+	et "github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/version"
 )
 
@@ -23,6 +24,37 @@ func NewExtension(product, kind, name string) *Extension {
 	}
 }
 
+func (e *Extension) GetSuite(name string) (*Suite, error) {
+	var suite *Suite
+
+	// Find first matching suite or parent suite
+	for _, s := range e.Suites {
+		if s.Name == name {
+			suite = &s
+			break
+		}
+		// FIXME: handle parents, or just leave that as an origin orchestrated thing?
+	}
+
+	if suite == nil {
+		return nil, fmt.Errorf("no such suite: %s", name)
+	}
+
+	return suite, nil
+}
+
+func (e *Extension) GetSpecs() et.ExtensionTestSpecs {
+	return e.specs
+}
+
+func (e *Extension) AddSpecs(specs et.ExtensionTestSpecs) {
+	specs.Walk(func(spec *et.ExtensionTestSpec) {
+		spec.Source = e.Component.Identifier()
+	})
+
+	e.specs = append(e.specs, specs...)
+}
+
 func (e *Extension) AddSuite(suite Suite) *Extension {
 	if e.Suites == nil {
 		e.Suites = []Suite{suite}
@@ -33,14 +65,29 @@ func (e *Extension) AddSuite(suite Suite) *Extension {
 	return e
 }
 
-func (e *Extension) FindSpecByName(name string) (*extensiontests.ExtensionTestSpec, error) {
-	for i := range e.specs {
-		if e.specs[i].Name == name {
-			return e.specs[i], nil
+func (e *Extension) FindSpecsByName(names ...string) (et.ExtensionTestSpecs, error) {
+	var specs et.ExtensionTestSpecs
+	var notFound []string
+
+	for _, name := range names {
+		found := false
+		for i := range e.specs {
+			if e.specs[i].Name == name {
+				specs = append(specs, e.specs[i])
+				found = true
+				break
+			}
+		}
+		if !found {
+			notFound = append(notFound, name)
 		}
 	}
 
-	return nil, fmt.Errorf("spec not found: %s", name)
+	if len(notFound) > 0 {
+		return nil, fmt.Errorf("no such tests: %s", strings.Join(notFound, ", "))
+	}
+
+	return specs, nil
 }
 
 func (e *Component) Identifier() string {

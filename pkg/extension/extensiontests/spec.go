@@ -16,6 +16,18 @@ func (specs ExtensionTestSpecs) Walk(walkFn func(*ExtensionTestSpec)) ExtensionT
 	return specs
 }
 
+func (specs ExtensionTestSpecs) Run(w *ResultWriter) error {
+	var results ExtensionTestResults
+
+	specs.Walk(func(spec *ExtensionTestSpec) {
+		res := spec.Run()
+		w.Write(res)
+		results = append(results, res)
+	})
+
+	return results.CheckOverallResult()
+}
+
 func (specs ExtensionTestSpecs) MustFilter(celExprs []string) ExtensionTestSpecs {
 	specs, err := specs.Filter(celExprs)
 	if err != nil {
@@ -27,6 +39,11 @@ func (specs ExtensionTestSpecs) MustFilter(celExprs []string) ExtensionTestSpecs
 
 func (specs ExtensionTestSpecs) Filter(celExprs []string) (ExtensionTestSpecs, error) {
 	var filteredSpecs ExtensionTestSpecs
+
+	// Empty filters returns all
+	if len(celExprs) == 0 {
+		return specs, nil
+	}
 
 	env, err := cel.NewEnv(
 		cel.Declarations(
