@@ -1,8 +1,8 @@
 package cmdrun
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -14,8 +14,10 @@ import (
 func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 	var runOpts struct {
 		componentFlags *flags.ComponentFlags
+		outputFlags    *flags.OutputFlags
 	}
 	runOpts.componentFlags = flags.NewComponentFlags()
+	runOpts.outputFlags = flags.NewOutputFlags()
 
 	cmd := &cobra.Command{
 		Use:          "run-suite NAME",
@@ -52,16 +54,21 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 				results = append(results, res)
 			}
 
-			j, err := json.Marshal(results)
+			j, err := runOpts.outputFlags.Marshal(results)
 			if err != nil {
 				return fmt.Errorf("failed to marshal results: %v", err)
 			}
 			fmt.Println(string(j))
 
-			return results.CheckOverallResult()
+			if failed := results.CheckOverallResult(); failed != nil {
+				os.Exit(1) // exit 1 without letting cobra print the error and pollute our output
+			}
+
+			return nil
 		},
 	}
 	runOpts.componentFlags.BindFlags(cmd.Flags())
+	runOpts.outputFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }

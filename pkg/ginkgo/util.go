@@ -29,6 +29,8 @@ func configureGinkgo() (*types.SuiteConfig, *types.ReporterConfig, error) {
 	reporterConfig.NoColor = true
 	reporterConfig.Verbose = true
 	ginkgo.SetReporterConfig(reporterConfig)
+
+	ginkgo.GinkgoWriter = GinkgoDiscard
 	return &suiteConfig, &reporterConfig, nil
 }
 
@@ -57,7 +59,8 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite() (ext.ExtensionTestSpecs, 
 				}
 
 				var summary types.SpecReport
-				ginkgo.GetSuite().RunSpec(spec, ginkgo.Labels{}, "", cwd, ginkgo.GetFailer(), ginkgo.GetWriter(), *suiteConfig, *reporterConfig)
+				ginkgo.GetSuite().RunSpec(spec, ginkgo.Labels{}, "", cwd, ginkgo.GetFailer(), GinkgoDiscard, *suiteConfig,
+					*reporterConfig)
 				for _, report := range ginkgo.GetSuite().GetReport().SpecReports {
 					if report.NumAttempts > 0 {
 						summary = report
@@ -127,4 +130,14 @@ func MustLifecycle(l string) ext.Lifecycle {
 	default:
 		panic(fmt.Sprintf("unknown test lifecycle: %s", l))
 	}
+}
+
+func lastFilenameSegment(filename string) string {
+	if parts := strings.Split(filename, "/vendor/"); len(parts) > 1 {
+		return parts[len(parts)-1]
+	}
+	if parts := strings.Split(filename, "/src/"); len(parts) > 1 {
+		return parts[len(parts)-1]
+	}
+	return filename
 }

@@ -1,8 +1,8 @@
 package cmdrun
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -17,9 +17,11 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 	var runOpts struct {
 		componentFlags *flags.ComponentFlags
 		nameFlags      *flags.NamesFlags
+		outputFlags    *flags.OutputFlags
 	}
 	runOpts.componentFlags = flags.NewComponentFlags()
 	runOpts.nameFlags = flags.NewNamesFlags()
+	runOpts.outputFlags = flags.NewOutputFlags()
 
 	cmd := &cobra.Command{
 		Use:          "run-test NAME",
@@ -60,17 +62,21 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 				results = append(results, res)
 			}
 
-			res, err := json.Marshal(results)
+			res, err := runOpts.outputFlags.Marshal(results)
 			if err != nil {
 				return errors.Wrap(err, "couldn't marshal results")
 			}
 
 			fmt.Println(string(res))
+			if results.CheckOverallResult() != nil {
+				os.Exit(1) // exit 1 without letting cobra print the error and pollute our output
+			}
 			return nil
 		},
 	}
 	runOpts.componentFlags.BindFlags(cmd.Flags())
 	runOpts.nameFlags.BindFlags(cmd.Flags())
+	runOpts.outputFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }

@@ -19,12 +19,12 @@ func NewCommand(registry *extension.Registry) *cobra.Command {
 		Short:        "Info displays available information",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ext := registry.Get(componentFlags.Component)
-			if ext == nil {
+			extension := registry.Get(componentFlags.Component)
+			if extension == nil {
 				return fmt.Errorf("couldn't find the component %q", componentFlags.Component)
 			}
 
-			info, err := json.MarshalIndent(ext, "", "    ")
+			info, err := json.MarshalIndent(extension, "", "    ")
 			if err != nil {
 				return err
 			}

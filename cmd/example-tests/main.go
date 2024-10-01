@@ -28,7 +28,6 @@ func main() {
 			Parents: []string{"openshift/conformance/parallel"},
 		})
 
-	// Example using CEL filters
 	ext.AddSuite(e.Suite{
 		Name: "example/fast",
 		Qualifiers: []string{
@@ -36,7 +35,6 @@ func main() {
 		},
 	})
 
-	// Example using CEL filters
 	ext.AddSuite(e.Suite{
 		Name: "example/slow",
 		Qualifiers: []string{
