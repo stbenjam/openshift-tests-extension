@@ -3,10 +3,12 @@ package cmdlist
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/openshift-eng/openshift-tests-extension/pkg/extension"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
@@ -50,11 +52,21 @@ func NewListCommand(registry *extension.Registry) *cobra.Command {
 				}
 			}
 
-			data, err := opts.outputFlags.Marshal(specs)
-			if err != nil {
-				return err
+			var out string
+			if opts.outputFlags.Output == "names" {
+				var names []string
+				specs.Walk(func(spec *extensiontests.ExtensionTestSpec) {
+					names = append(names, spec.Name)
+				})
+				out = strings.Join(names, "\n")
+			} else {
+				data, err := opts.outputFlags.Marshal(specs)
+				if err != nil {
+					return err
+				}
+				out = string(data)
 			}
-			fmt.Fprintf(os.Stdout, "%s\n", data)
+			fmt.Fprintf(os.Stdout, "%s\n", out)
 			return nil
 		},
 	}

@@ -1,6 +1,7 @@
 package cmdrun
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
@@ -35,6 +36,22 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("use --names to specify more than one test")
 			}
 			opts.nameFlags.Names = append(opts.nameFlags.Names, args...)
+
+			// allow reading tests from an stdin pipe
+			info, err := os.Stdin.Stat()
+			if err != nil {
+				return err
+			}
+			if info.Mode()&os.ModeCharDevice == 0 { // Check if input is from a pipe
+				scanner := bufio.NewScanner(os.Stdin)
+				for scanner.Scan() {
+					opts.nameFlags.Names = append(opts.nameFlags.Names, scanner.Text())
+				}
+				if err := scanner.Err(); err != nil {
+					return fmt.Errorf("error reading from stdin: %v", err)
+				}
+			}
+
 			if len(opts.nameFlags.Names) == 0 {
 				return fmt.Errorf("must specify at least one test")
 			}
