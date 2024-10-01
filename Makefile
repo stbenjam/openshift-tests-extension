@@ -8,20 +8,30 @@ LDFLAGS := -X '$(GO_PKG_NAME)/pkg/version.CommitFromGit=$(GIT_COMMIT)' \
            -X '$(GO_PKG_NAME)/pkg/version.BuildDate=$(BUILD_DATE)' \
            -X '$(GO_PKG_NAME)/pkg/version.GitTreeState=$(GIT_TREE_STATE)'
 
-.PHONY: verify test lint clean
+.PHONY: verify test lint clean unit integration
 
-all: test build
+all: unit build integration
 
 verify: lint
 
-build:
-	go build -ldflags "$(LDFLAGS)" ./cmd/...
+build: example-tests framework-tests
 
-test:
+example-tests:
+	go build -ldflags "$(LDFLAGS)" ./cmd/example-tests/...
+
+framework-tests:
+	go build -ldflags "$(LDFLAGS)" ./cmd/framework-tests/...
+
+test: unit integration
+
+unit:
 	go test ./...
+
+integration: build
+	./framework-tests run-suite framework
 
 lint:
 	./hack/go-lint.sh run ./...
 
 clean:
-	rm -f example-test
+	rm -f example-tests framework-tests

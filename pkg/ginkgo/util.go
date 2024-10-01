@@ -82,15 +82,15 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite() (ext.ExtensionTestSpecs, 
 					result.Result = ext.ResultSkipped
 				case summary.State == types.SpecStateFailed, summary.State == types.SpecStatePanicked, summary.State == types.SpecStateInterrupted:
 					result.Result = ext.ResultFailed
-					var messages []string
+					var errors []string
 					if len(summary.Failure.ForwardedPanic) > 0 {
 						if len(summary.Failure.Location.FullStackTrace) > 0 {
-							messages = append(messages, fmt.Sprintf("\n%s\n", summary.Failure.Location.FullStackTrace))
+							errors = append(errors, fmt.Sprintf("\n%s\n", summary.Failure.Location.FullStackTrace))
 						}
-						messages = append(messages, fmt.Sprintf("fail [%s:%d]: Test Panicked: %s", lastFilenameSegment(summary.Failure.Location.FileName), summary.Failure.Location.LineNumber, summary.Failure.ForwardedPanic))
+						errors = append(errors, fmt.Sprintf("fail [%s:%d]: Test Panicked: %s", lastFilenameSegment(summary.Failure.Location.FileName), summary.Failure.Location.LineNumber, summary.Failure.ForwardedPanic))
 					}
-					messages = append(messages, fmt.Sprintf("fail [%s:%d]: %s", lastFilenameSegment(summary.Failure.Location.FileName), summary.Failure.Location.LineNumber, summary.Failure.Message))
-					result.Messages = messages
+					errors = append(errors, fmt.Sprintf("fail [%s:%d]: %s", lastFilenameSegment(summary.Failure.Location.FileName), summary.Failure.Location.LineNumber, summary.Failure.Message))
+					result.Error = strings.Join(errors, "\n")
 				default:
 					panic(fmt.Sprintf("test produced unknown outcome: %#v", summary))
 				}

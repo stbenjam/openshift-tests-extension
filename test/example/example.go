@@ -47,8 +47,8 @@ var _ = Describe("[sig-testing] openshift-tests-extension", func() {
 		panic("oh no")
 	})
 
-	It("should support long-running tests", g.Slow(), func() {
-		time.Sleep(1 * time.Minute)
+	It("should support slow tests", g.Slow(), func() {
+		time.Sleep(15 * time.Second)
 		Expect(true).To(BeTrue())
 	})
 })
