@@ -19,26 +19,29 @@ func main() {
 	registry := e.NewRegistry()
 
 	// You can declare multiple extensions, but most people will probably only need to create one.
-	ext := e.NewExtension("openshift", "payload", "default")
+	ext := e.NewExtension("openshift", "payload", "example-tests")
 
 	// Add suites to the extension.  Suites can be filtered by CEL qualifiers.
 	ext.AddSuite(
 		e.Suite{
 			Name:    "example/tests",
 			Parents: []string{"openshift/conformance/parallel"},
+			Qualifiers: []string{
+				`source == "openshift:payload:example-tests" `,
+			},
 		})
 
 	ext.AddSuite(e.Suite{
 		Name: "example/fast",
 		Qualifiers: []string{
-			"!labels.exists(l, l==\"SLOW\")",
+			`source == "openshift:payload:example-tests" && !labels.exists(l, l=="SLOW")`,
 		},
 	})
 
 	ext.AddSuite(e.Suite{
 		Name: "example/slow",
 		Qualifiers: []string{
-			"labels.exists(l, l==\"SLOW\")",
+			`source == "openshift:payload:example-tests && labels.exists(l, l=="SLOW")`,
 		},
 	})
 

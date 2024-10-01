@@ -19,7 +19,7 @@ var _ = Describe("[sig-testing] example-tests list", Label("framework"), func() 
 	It("should populate fields", func() {
 		specs := runList()
 		Expect(specs[0]).To(HaveField("Lifecycle", Not(BeEmpty())))
-		Expect(specs[0]).To(HaveField("Source", "openshift:payload:default"))
+		Expect(specs[0]).To(HaveField("Source", "openshift:payload:example-tests"))
 	})
 
 	It("should filter specs by suite", func() {

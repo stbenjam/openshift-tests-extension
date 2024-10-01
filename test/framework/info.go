@@ -38,6 +38,6 @@ var _ = Describe("[sig-testing] example-tests info", Label("framework"), func() 
 	It("should have the correct component information", func() {
 		Expect(result.Component.Product).To(Equal("openshift"), "Expected product to be 'openshift'")
 		Expect(result.Component.Kind).To(Equal("payload"), "Expected type to be 'payload'")
-		Expect(result.Component.Name).To(Equal("default"), "Expected name to be 'default'")
+		Expect(result.Component.Name).To(Equal("example-tests"), "Expected name to be 'default'")
 	})
 })
