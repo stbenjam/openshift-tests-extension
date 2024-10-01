@@ -48,7 +48,7 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 				specs = specs.MustFilter(foundSuite.Qualifiers)
 			}
 
-			// Runs pecs
+			// Run specs
 			for _, spec := range specs {
 				res := runSpec(spec)
 				results = append(results, res)
