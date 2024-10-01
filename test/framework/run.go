@@ -20,7 +20,7 @@ var _ = Describe("[sig-testing] example-tests run-suite", Label("framework"), fu
 		cmd := exec.Command("./example-tests", "run-suite", "example/fast")
 
 		// Capture both stdout and stderr
-		output, cmdErr = cmd.CombinedOutput()
+		output, cmdErr = cmd.Output()
 
 		// Expect command to exit with a non-zero status (exit code 1 for failed tests)
 		var exitErr *exec.ExitError

@@ -2,6 +2,7 @@ package extensiontests
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/checker/decls"
@@ -20,7 +21,7 @@ func (specs ExtensionTestSpecs) Run(w *ResultWriter) error {
 	var results ExtensionTestResults
 
 	specs.Walk(func(spec *ExtensionTestSpec) {
-		res := spec.Run()
+		res := runSpec(spec)
 		w.Write(res)
 		results = append(results, res)
 	})
@@ -134,4 +135,30 @@ func (specs ExtensionTestSpecs) UnsetTag(key string) ExtensionTestSpecs {
 	}
 
 	return specs
+}
+
+func runSpec(spec *ExtensionTestSpec) *ExtensionTestResult {
+	startTime := time.Now()
+	res := spec.Run()
+	duration := time.Since(startTime)
+	endTime := startTime.Add(duration)
+	if res == nil {
+		// this shouldn't happen
+		panic(fmt.Sprintf("test produced no result: %s", spec.Name))
+	}
+
+	res.Lifecycle = spec.Lifecycle
+
+	// If the runner doesn't populate this info, we should set it
+	if res.StartTime == nil {
+		res.StartTime = &startTime
+	}
+	if res.EndTime == nil {
+		res.EndTime = &endTime
+	}
+	if res.Duration == 0 {
+		res.Duration = duration.Milliseconds()
+	}
+
+	return res
 }
