@@ -5,7 +5,7 @@
 
 set -ex
 
-if [ "$CI" = "true" ];
+if [ "$OPENSHIFT_CI" = "true" ];
 then
   golangci-lint "${@}"
 else
