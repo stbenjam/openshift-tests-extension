@@ -16,7 +16,7 @@ func NewInfoCommand(registry *extension.Registry) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:          "info",
-		Short:        "Info displays available information",
+		Short:        "Display extension metadata",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			extension := registry.Get(componentFlags.Component)
