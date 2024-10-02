@@ -16,7 +16,8 @@ type Extension struct {
 	Suites []Suite `json:"suites"`
 
 	// Private data
-	specs extensiontests.ExtensionTestSpecs
+	specs         extensiontests.ExtensionTestSpecs
+	obsoleteTests []string
 }
 
 // Source contains the details of the commit and source URL.

@@ -15,6 +15,9 @@ import (
 
 const metadataDirectory = ".openshift-tests-extension"
 
+// NewUpdateCommand adds an "update" command used to generate and verify the metadata we keep track of. This should
+// be a black box to end users, i.e. we can add more criteria later they'll consume when revendoring.  For now,
+// we prevent a test to be renamed without updating other names, or a test to be deleted.
 func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 	componentFlags := flags.NewComponentFlags()
 
@@ -33,8 +36,6 @@ func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("failed to create directory %s: %w", metadataDirectory, err)
 			}
 
-			newSpecs := ext.GetSpecs()
-
 			// Read existing specs
 			metadataPath := filepath.Join(metadataDirectory, fmt.Sprintf("%s.json", ext.Component.Identifier()))
 			var oldSpecs extensiontests.ExtensionTestSpecs
@@ -48,7 +49,7 @@ func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 					return fmt.Errorf("failed to decode file: %s: %+w", metadataPath, err)
 				}
 
-				missing, err := newSpecs.FindRemovedTestsWithoutRename(oldSpecs)
+				missing, err := ext.FindRemovedTestsWithoutRename(oldSpecs)
 				if err != nil && len(missing) > 0 {
 					fmt.Fprintf(os.Stderr, "Missing Tests:\n")
 					for _, name := range missing {
@@ -62,6 +63,7 @@ func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 			}
 
 			// no missing tests, write the results
+			newSpecs := ext.GetSpecs()
 			data, err := json.MarshalIndent(newSpecs, "", "  ")
 			if err != nil {
 				return fmt.Errorf("failed to marshal specs to JSON: %w", err)
@@ -72,7 +74,7 @@ func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("failed to write file %s: %w", metadataPath, err)
 			}
 
-			fmt.Printf("successfully updated metadata")
+			fmt.Printf("successfully updated metadata\n")
 			return nil
 		},
 	}

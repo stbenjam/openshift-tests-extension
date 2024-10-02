@@ -55,6 +55,47 @@ func (e *Extension) AddSpecs(specs et.ExtensionTestSpecs) {
 	e.specs = append(e.specs, specs...)
 }
 
+// IgnoreObsoleteTests allows removal of a test.
+func (e *Extension) IgnoreObsoleteTests(testNames ...string) {
+	e.obsoleteTests = append(e.obsoleteTests, testNames...)
+}
+
+// FindRemovedTestsWithoutRename compares two collections of specs, and if specs is missing a test from oldSpecs,
+// including consideration of other names, we return an error.  Can be used to detect test renames or removals.
+func (e *Extension) FindRemovedTestsWithoutRename(oldSpecs et.ExtensionTestSpecs) ([]string, error) {
+	currentSpecs := e.GetSpecs()
+	// It's neat we can do it with CEL but can it handle it when we've got 10K tests in there?
+	potentiallyMissing, err := oldSpecs.Filter([]string{fmt.Sprintf(`!(name in %s)`, strSliceToCEL(currentSpecs.Names()))})
+	if err != nil {
+		return nil, err
+	}
+
+	actuallyMissing, err := potentiallyMissing.Filter([]string{fmt.Sprintf(`!(%s.exists(d, name == d))`,
+		strSliceToCEL(currentSpecs.OtherNames()))})
+	if err != nil {
+		return nil, err
+	}
+
+	var unpermittedMissingTests []string
+	for _, spec := range actuallyMissing {
+		missing := true
+		for _, allowed := range e.obsoleteTests {
+			if spec.Name == allowed {
+				missing = false
+			}
+		}
+		if missing {
+			unpermittedMissingTests = append(unpermittedMissingTests, spec.Name)
+		}
+	}
+
+	if len(unpermittedMissingTests) > 0 {
+		return unpermittedMissingTests, fmt.Errorf("some tests were not found")
+	}
+
+	return nil, nil
+}
+
 // AddGlobalSuite adds a suite whose qualifiers will apply to all tests,
 // not just this one.  Allowing a developer to create a composed suite of
 // tests from many sources.

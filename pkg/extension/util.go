@@ -1,4 +1,4 @@
-package extensiontests
+package extension
 
 import (
 	"fmt"

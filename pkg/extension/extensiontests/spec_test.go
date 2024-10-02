@@ -8,54 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func TestExtensionTestSpecs_FindRemovedTestsWithoutRename(t *testing.T) {
-	tests := []struct {
-		name    string
-		old     ExtensionTestSpecs
-		new     ExtensionTestSpecs
-		want    []string
-		wantErr bool
-	}{
-		{
-			old: ExtensionTestSpecs{
-				{
-					Name: "this test has a tpyo",
-				},
-			},
-			new: ExtensionTestSpecs{
-				{
-					Name:       "this test doesn't have a typo",
-					OtherNames: sets.New[string]("this test has a tpyo"),
-				},
-			},
-			wantErr: false,
-		},
-		{
-			old: ExtensionTestSpecs{
-				{
-					Name: "this test was deleted",
-				},
-			},
-			new:     ExtensionTestSpecs{},
-			want:    []string{"this test was deleted"},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.new.FindRemovedTestsWithoutRename(tt.old)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FindRemovedTestsWithoutRename() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FindRemovedTestsWithoutRename() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestExtensionTestSpecs_Walk(t *testing.T) {
 	specs := ExtensionTestSpecs{
 		{Name: "test1"},
