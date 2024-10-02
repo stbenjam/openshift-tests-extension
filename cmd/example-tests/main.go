@@ -21,27 +21,29 @@ func main() {
 	// You can declare multiple extensions, but most people will probably only need to create one.
 	ext := e.NewExtension("openshift", "payload", "example-tests")
 
-	// Add suites to the extension.  Suites can be filtered by CEL qualifiers.
+	// Add suites to the extension. Specifying parents will cause the tests from this suite
+	// to be included when a parent is invoked.
 	ext.AddSuite(
 		e.Suite{
 			Name:    "example/tests",
 			Parents: []string{"openshift/conformance/parallel"},
-			Qualifiers: []string{
-				`source == "openshift:payload:example-tests" `,
-			},
 		})
 
+	// The tests that a suite is composed of can be filtered by CEL expressions. By
+	// default, the qualifiers only apply to tests from this extension.
 	ext.AddSuite(e.Suite{
 		Name: "example/fast",
 		Qualifiers: []string{
-			`source == "openshift:payload:example-tests" && !labels.exists(l, l=="SLOW")`,
+			`!labels.exists(l, l=="SLOW")`,
 		},
 	})
 
-	ext.AddSuite(e.Suite{
+	// Global suites' qualifiers will apply to all tests available, even
+	// those outside of this extension (when invoked by origin).
+	ext.AddGlobalSuite(e.Suite{
 		Name: "example/slow",
 		Qualifiers: []string{
-			`source == "openshift:payload:example-tests && labels.exists(l, l=="SLOW")`,
+			`labels.exists(l, l=="SLOW")`,
 		},
 	})
 

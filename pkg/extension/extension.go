@@ -55,13 +55,27 @@ func (e *Extension) AddSpecs(specs et.ExtensionTestSpecs) {
 	e.specs = append(e.specs, specs...)
 }
 
-func (e *Extension) AddSuite(suite Suite) *Extension {
+// AddGlobalSuite adds a suite whose qualifiers will apply to all tests,
+// not just this one.  Allowing a developer to create a composed suite of
+// tests from many sources.
+func (e *Extension) AddGlobalSuite(suite Suite) *Extension {
 	if e.Suites == nil {
 		e.Suites = []Suite{suite}
 	} else {
 		e.Suites = append(e.Suites, suite)
 	}
 
+	return e
+}
+
+// AddSuite adds a suite whose qualifiers will only apply to tests present
+// in its own extension.
+func (e *Extension) AddSuite(suite Suite) *Extension {
+	expr := fmt.Sprintf("source == %q", e.Component.Identifier())
+	for i := range suite.Qualifiers {
+		suite.Qualifiers[i] = fmt.Sprintf("(%s) && (%s)", expr, suite.Qualifiers[i])
+	}
+	e.AddGlobalSuite(suite)
 	return e
 }
 
