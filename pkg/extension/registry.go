@@ -33,7 +33,7 @@ func (r *Registry) Register(extension *Extension) {
 		r.extensions[DefaultExtension] = extension
 	}
 
-	r.extensions[fmt.Sprintf("%s:%s:%s", extension.Component.Product, extension.Component.Kind, extension.Component.Name)] = extension
+	r.extensions[fmt.Sprintf("%s", extension.Component.Identifier())] = extension
 }
 
 func (r *Registry) Deregister(name string) {
