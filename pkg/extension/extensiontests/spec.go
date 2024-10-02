@@ -29,6 +29,14 @@ func (specs ExtensionTestSpecs) Run(w *ResultWriter) error {
 	return results.CheckOverallResult()
 }
 
+func (specs ExtensionTestSpecs) Names() []string {
+	var names []string
+	for _, spec := range specs {
+		names = append(names, spec.Name)
+	}
+	return names
+}
+
 func (specs ExtensionTestSpecs) MustFilter(celExprs []string) ExtensionTestSpecs {
 	specs, err := specs.Filter(celExprs)
 	if err != nil {
