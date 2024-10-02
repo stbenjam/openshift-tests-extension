@@ -46,7 +46,7 @@ github.com/google/pprof/profile
 # github.com/inconshreveable/mousetrap v1.1.0
 ## explicit; go 1.18
 github.com/inconshreveable/mousetrap
-# github.com/onsi/ginkgo/v2 v2.20.2 => github.com/stbenjam/onsi-ginkgo/v2 v2.0.0-20240924133505-1512c4b17aa2
+# github.com/onsi/ginkgo/v2 v2.20.2 => github.com/openshift/onsi-ginkgo/v2 v2.6.1-0.20241002180654-3ded579fec72
 ## explicit; go 1.20
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
@@ -188,4 +188,4 @@ gopkg.in/yaml.v3
 # k8s.io/apimachinery v0.31.1
 ## explicit; go 1.22.0
 k8s.io/apimachinery/pkg/util/sets
-# github.com/onsi/ginkgo/v2 => github.com/stbenjam/onsi-ginkgo/v2 v2.0.0-20240924133505-1512c4b17aa2
+# github.com/onsi/ginkgo/v2 => github.com/openshift/onsi-ginkgo/v2 v2.6.1-0.20241002180654-3ded579fec72
