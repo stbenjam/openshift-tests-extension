@@ -5,9 +5,11 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd"
 	e "github.com/openshift-eng/openshift-tests-extension/pkg/extension"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 	g "github.com/openshift-eng/openshift-tests-extension/pkg/ginkgo"
 
 	// If using ginkgo, import your tests here
@@ -64,6 +66,12 @@ func main() {
 	// specs = specs.MustFilter([]string{`name.contains("filter")`})
 
 	// Or walked...
+	specs = specs.Walk(func(spec *extensiontests.ExtensionTestSpec) {
+		if spec.Name == "[sig-testing] openshift-tests-extension has a test with a typo" {
+			spec.OtherNames = sets.New[string](`[sig-testing] openshift-tests-extension has a test with a tpyo`)
+		}
+	})
+
 	// specs = specs.Walk(func(e *extensiontests.ExtensionTestSpec) {
 	//	if strings.Contains(e.Name, "scale up") {
 	//		e.Labels.Insert("SLOW")

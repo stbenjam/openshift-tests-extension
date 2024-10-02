@@ -33,46 +33,32 @@ func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("failed to create directory %s: %w", metadataDirectory, err)
 			}
 
-			// Define the file path
-			metadataPath := filepath.Join(metadataDirectory, fmt.Sprintf("%s.json", ext.Component.Identifier()))
+			newSpecs := ext.GetSpecs()
 
 			// Read existing specs
+			metadataPath := filepath.Join(metadataDirectory, fmt.Sprintf("%s.json", ext.Component.Identifier()))
 			var oldSpecs extensiontests.ExtensionTestSpecs
 			source, err := os.Open(metadataPath)
 			if err != nil {
-				return fmt.Errorf("failed to open file: %s: %+w", metadataPath, err)
-			}
-			if err := json.NewDecoder(source).Decode(&oldSpecs); err != nil {
-				return fmt.Errorf("failed to decode file: %s: %+w", metadataPath, err)
-			}
-			allOldNames := oldSpecs.Names()
-
-			newSpecs := ext.GetSpecs()
-			allNewNames := newSpecs.Names()
-
-			diff := findMissingNames(allOldNames, allNewNames)
-			var missing []string
-			if len(diff) > 0 {
-				for _, name := range diff {
-					res, err := newSpecs.Filter([]string{fmt.Sprintf(`other_names.exists(n, n == "%s")`, name)})
-					if err != nil {
-						return err
-					}
-					if len(res) == 0 {
-						missing = append(missing, name)
-					}
+				if !os.IsNotExist(err) {
+					return fmt.Errorf("failed to open file: %s: %+w", metadataPath, err)
 				}
-			}
-
-			if len(missing) > 0 {
-				fmt.Fprintf(os.Stderr, "Missing Tests:\n")
-				for _, name := range missing {
-					fmt.Fprintf(os.Stdout, "  * %s\n", name)
+			} else {
+				if err := json.NewDecoder(source).Decode(&oldSpecs); err != nil {
+					return fmt.Errorf("failed to decode file: %s: %+w", metadataPath, err)
 				}
-				fmt.Fprintf(os.Stderr, "\n")
 
-				return fmt.Errorf("missing tests, if you've renamed tests you must add their names to OtherNames, " +
-					"or mark them obsolete")
+				missing, err := newSpecs.FindRemovedTestsWithoutRename(oldSpecs)
+				if err != nil && len(missing) > 0 {
+					fmt.Fprintf(os.Stderr, "Missing Tests:\n")
+					for _, name := range missing {
+						fmt.Fprintf(os.Stdout, "  * %s\n", name)
+					}
+					fmt.Fprintf(os.Stderr, "\n")
+
+					return fmt.Errorf("missing tests, if you've renamed tests you must add their names to OtherNames, " +
+						"or mark them obsolete")
+				}
 			}
 
 			// no missing tests, write the results
@@ -86,6 +72,7 @@ func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("failed to write file %s: %w", metadataPath, err)
 			}
 
+			fmt.Printf("successfully updated metadata")
 			return nil
 		},
 	}

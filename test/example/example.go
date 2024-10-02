@@ -51,4 +51,8 @@ var _ = Describe("[sig-testing] openshift-tests-extension", func() {
 		time.Sleep(15 * time.Second)
 		Expect(true).To(BeTrue())
 	})
+
+	It("has a test with a typo", func() {
+		Expect(true).To(BeTrue())
+	})
 })

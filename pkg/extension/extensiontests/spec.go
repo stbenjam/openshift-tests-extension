@@ -29,6 +29,37 @@ func (specs ExtensionTestSpecs) Run(w *ResultWriter) error {
 	return results.CheckOverallResult()
 }
 
+// FindRemovedTestsWithoutRename compares two collections of specs, and if specs is missing a test from oldSpecs,
+// including consideration of other names, we return an error.  Can be used to detect test renames or removals.
+func (specs ExtensionTestSpecs) FindRemovedTestsWithoutRename(oldSpecs ExtensionTestSpecs) ([]string, error) {
+	potentiallyMissing, err := oldSpecs.Filter([]string{fmt.Sprintf(`!(name in %s)`, strSliceToCEL(specs.Names()))})
+	if err != nil {
+		return nil, err
+	}
+
+	actuallyMissing, err := potentiallyMissing.Filter([]string{fmt.Sprintf(`!(%s.exists(d, name == d))`,
+		strSliceToCEL(specs.OtherNames()))})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(actuallyMissing) > 0 {
+		return actuallyMissing.Names(), fmt.Errorf("some tests were not found")
+	}
+
+	return nil, nil
+}
+
+func (specs ExtensionTestSpecs) OtherNames() []string {
+	var names []string
+	for _, spec := range specs {
+		for other := range spec.OtherNames {
+			names = append(names, other)
+		}
+	}
+	return names
+}
+
 func (specs ExtensionTestSpecs) Names() []string {
 	var names []string
 	for _, spec := range specs {
