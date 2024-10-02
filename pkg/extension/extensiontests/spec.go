@@ -9,6 +9,8 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/checker/decls"
 	"github.com/google/cel-go/common/types"
+
+	t "github.com/openshift-eng/openshift-tests-extension/pkg/time"
 )
 
 func (specs ExtensionTestSpecs) Walk(walkFn func(*ExtensionTestSpec)) ExtensionTestSpecs {
@@ -198,10 +200,12 @@ func runSpec(spec *ExtensionTestSpec) *ExtensionTestResult {
 
 	// If the runner doesn't populate this info, we should set it
 	if res.StartTime == nil {
-		res.StartTime = &startTime
+		dbTime := t.DBTime(startTime)
+		res.StartTime = &dbTime
 	}
 	if res.EndTime == nil {
-		res.EndTime = &endTime
+		dbTime := t.DBTime(endTime)
+		res.EndTime = &dbTime
 	}
 	if res.Duration == 0 {
 		res.Duration = duration.Milliseconds()

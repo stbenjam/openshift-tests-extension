@@ -1,9 +1,9 @@
 package extensiontests
 
 import (
-	"time"
-
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/openshift-eng/openshift-tests-extension/pkg/time"
 )
 
 type Lifecycle string
@@ -63,13 +63,13 @@ var ResultSkipped Result = "skipped"
 var ResultFailed Result = "failed"
 
 type ExtensionTestResult struct {
-	Name      string     `json:"name"`
-	Lifecycle Lifecycle  `json:"lifecycle"`
-	Duration  int64      `json:"duration"`
-	StartTime *time.Time `json:"startTime"`
-	EndTime   *time.Time `json:"endTime"`
-	Result    Result     `json:"result"`
-	Output    string     `json:"output"`
-	Error     string     `json:"error"`
-	Messages  []string   `json:"messages"`
+	Name      string       `json:"name"`
+	Lifecycle Lifecycle    `json:"lifecycle"`
+	Duration  int64        `json:"duration"`
+	StartTime *time.DBTime `json:"startTime"`
+	EndTime   *time.DBTime `json:"endTime"`
+	Result    Result       `json:"result"`
+	Output    string       `json:"output"`
+	Error     string       `json:"error"`
+	Messages  []string     `json:"messages"`
 }
