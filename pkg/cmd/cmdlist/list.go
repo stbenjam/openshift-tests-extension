@@ -3,12 +3,10 @@ package cmdlist
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/openshift-eng/openshift-tests-extension/pkg/extension"
-	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
@@ -23,6 +21,7 @@ func NewListCommand(registry *extension.Registry) *cobra.Command {
 		outputFlags:    flags.NewOutputFlags(),
 	}
 
+	// Tests
 	listTestsCmd := &cobra.Command{
 		Use:          "tests",
 		Short:        "List available tests",
@@ -52,21 +51,11 @@ func NewListCommand(registry *extension.Registry) *cobra.Command {
 				}
 			}
 
-			var out string
-			if opts.outputFlags.Output == "names" {
-				var names []string
-				specs.Walk(func(spec *extensiontests.ExtensionTestSpec) {
-					names = append(names, spec.Name)
-				})
-				out = strings.Join(names, "\n")
-			} else {
-				data, err := opts.outputFlags.Marshal(specs)
-				if err != nil {
-					return err
-				}
-				out = string(data)
+			data, err := opts.outputFlags.Marshal(specs)
+			if err != nil {
+				return err
 			}
-			fmt.Fprintf(os.Stdout, "%s\n", out)
+			fmt.Fprintf(os.Stdout, "%s\n", string(data))
 			return nil
 		},
 	}
@@ -74,17 +63,50 @@ func NewListCommand(registry *extension.Registry) *cobra.Command {
 	opts.componentFlags.BindFlags(listTestsCmd.Flags())
 	opts.outputFlags.BindFlags(listTestsCmd.Flags())
 
+	// Suites
+	listSuitesCommand := &cobra.Command{
+		Use:          "suites",
+		Short:        "List available suites",
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ext := registry.Get(opts.componentFlags.Component)
+			if ext == nil {
+				return fmt.Errorf("component not found: %s", opts.componentFlags.Component)
+			}
+
+			suites := ext.Suites
+
+			data, err := opts.outputFlags.Marshal(suites)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stdout, "%s\n", string(data))
+			return nil
+		},
+	}
+	opts.componentFlags.BindFlags(listSuitesCommand.Flags())
+	opts.outputFlags.BindFlags(listSuitesCommand.Flags())
+
+	// Components
 	listComponentsCmd := &cobra.Command{
 		Use:          "components",
 		Short:        "List available components",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			var components []*extension.Component
 			registry.Walk(func(e *extension.Extension) {
-				fmt.Printf("%s:%s:%s\n", e.Component.Product, e.Component.Kind, e.Component.Name)
+				components = append(components, &e.Component)
 			})
+
+			data, err := opts.outputFlags.Marshal(components)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stdout, "%s\n", string(data))
 			return nil
 		},
 	}
+	opts.outputFlags.BindFlags(listComponentsCmd.Flags())
 
 	var listCmd = &cobra.Command{
 		Use:   "list [subcommand]",
@@ -96,7 +118,7 @@ func NewListCommand(registry *extension.Registry) *cobra.Command {
 	opts.suiteFlags.BindFlags(listCmd.Flags())
 	opts.componentFlags.BindFlags(listCmd.Flags())
 	opts.outputFlags.BindFlags(listCmd.Flags())
-	listCmd.AddCommand(listTestsCmd, listComponentsCmd)
+	listCmd.AddCommand(listTestsCmd, listComponentsCmd, listSuitesCommand)
 
 	return listCmd
 }
