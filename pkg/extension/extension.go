@@ -27,13 +27,11 @@ func NewExtension(product, kind, name string) *Extension {
 func (e *Extension) GetSuite(name string) (*Suite, error) {
 	var suite *Suite
 
-	// Find first matching suite or parent suite
 	for _, s := range e.Suites {
 		if s.Name == name {
 			suite = &s
 			break
 		}
-		// FIXME: handle parents, or just leave that as an origin orchestrated thing?
 	}
 
 	if suite == nil {
