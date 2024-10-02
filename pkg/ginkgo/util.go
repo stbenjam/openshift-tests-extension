@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
@@ -41,6 +42,7 @@ func configureGinkgo() (*types.SuiteConfig, *types.ReporterConfig, error) {
 
 func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite() (ext.ExtensionTestSpecs, error) {
 	var tests []*ext.ExtensionTestSpec
+	var enforceSerialExecutionForGinkgo sync.Mutex // in-process parallelization for ginkgo is impossible so far
 
 	if _, _, err := configureGinkgo(); err != nil {
 		return nil, err
@@ -57,6 +59,9 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite() (ext.ExtensionTestSpecs, 
 			Labels:    sets.New[string](spec.Labels()...),
 			Lifecycle: GetLifecycle(spec.Labels()),
 			Run: func() *ext.ExtensionTestResult {
+				enforceSerialExecutionForGinkgo.Lock()
+				defer enforceSerialExecutionForGinkgo.Unlock()
+
 				suiteConfig, reporterConfig, _ := configureGinkgo()
 
 				result := &ext.ExtensionTestResult{
