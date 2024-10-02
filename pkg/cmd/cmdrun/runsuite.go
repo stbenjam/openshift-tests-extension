@@ -52,7 +52,7 @@ func NewRunSuiteCommand(registry *extension.Registry) *cobra.Command {
 				return errors.Wrap(err, "couldn't filter specs")
 			}
 
-			return specs.RunParallel(w, opts.concurrencyFlags.MaxConcurency)
+			return specs.Run(w, opts.concurrencyFlags.MaxConcurency)
 		},
 	}
 	opts.componentFlags.BindFlags(cmd.Flags())

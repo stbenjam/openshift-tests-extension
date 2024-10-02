@@ -69,7 +69,7 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 			}
 			defer w.Flush()
 
-			return specs.RunParallel(w, opts.concurrencyFlags.MaxConcurency)
+			return specs.Run(w, opts.concurrencyFlags.MaxConcurency)
 		},
 	}
 	opts.componentFlags.BindFlags(cmd.Flags())

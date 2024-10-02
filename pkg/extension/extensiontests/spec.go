@@ -37,19 +37,7 @@ func (specs ExtensionTestSpecs) Names() []string {
 	return names
 }
 
-func (specs ExtensionTestSpecs) Run(w *ResultWriter) error {
-	var results ExtensionTestResults
-
-	specs.Walk(func(spec *ExtensionTestSpec) {
-		res := runSpec(spec)
-		w.Write(res)
-		results = append(results, res)
-	})
-
-	return results.CheckOverallResult()
-}
-
-func (specs ExtensionTestSpecs) RunParallel(w *ResultWriter, maxConcurrent int) error {
+func (specs ExtensionTestSpecs) Run(w *ResultWriter, maxConcurrent int) error {
 	queue := make(chan *ExtensionTestSpec)
 	failures := atomic.Int64{}
 
