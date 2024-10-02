@@ -10,7 +10,7 @@ import (
 
 func NewExtension(product, kind, name string) *Extension {
 	return &Extension{
-		APIVersion: CurrentExtensionVersion,
+		APIVersion: CurrentExtensionAPIVersion,
 		Source: Source{
 			Commit:       version.CommitFromGit,
 			BuildDate:    version.BuildDate,
