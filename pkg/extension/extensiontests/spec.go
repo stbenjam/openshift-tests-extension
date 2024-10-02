@@ -185,10 +185,10 @@ func (specs ExtensionTestSpecs) UnsetTag(key string) ExtensionTestSpecs {
 }
 
 func runSpec(spec *ExtensionTestSpec) *ExtensionTestResult {
-	startTime := time.Now()
+	startTime := time.Now().UTC()
 	res := spec.Run()
 	duration := time.Since(startTime)
-	endTime := startTime.Add(duration)
+	endTime := startTime.Add(duration).UTC()
 	if res == nil {
 		// this shouldn't happen
 		panic(fmt.Sprintf("test produced no result: %s", spec.Name))
