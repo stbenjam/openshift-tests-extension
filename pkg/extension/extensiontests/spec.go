@@ -2,6 +2,8 @@ package extensiontests
 
 import (
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/cel-go/cel"
@@ -15,18 +17,6 @@ func (specs ExtensionTestSpecs) Walk(walkFn func(*ExtensionTestSpec)) ExtensionT
 	}
 
 	return specs
-}
-
-func (specs ExtensionTestSpecs) Run(w *ResultWriter) error {
-	var results ExtensionTestResults
-
-	specs.Walk(func(spec *ExtensionTestSpec) {
-		res := runSpec(spec)
-		w.Write(res)
-		results = append(results, res)
-	})
-
-	return results.CheckOverallResult()
 }
 
 func (specs ExtensionTestSpecs) OtherNames() []string {
@@ -45,6 +35,56 @@ func (specs ExtensionTestSpecs) Names() []string {
 		names = append(names, spec.Name)
 	}
 	return names
+}
+
+func (specs ExtensionTestSpecs) Run(w *ResultWriter) error {
+	var results ExtensionTestResults
+
+	specs.Walk(func(spec *ExtensionTestSpec) {
+		res := runSpec(spec)
+		w.Write(res)
+		results = append(results, res)
+	})
+
+	return results.CheckOverallResult()
+}
+
+func (specs ExtensionTestSpecs) RunParallel(w *ResultWriter, maxConcurrent int) error {
+	queue := make(chan *ExtensionTestSpec)
+	failures := atomic.Int64{}
+
+	// Feed the queue
+	go func() {
+		specs.Walk(func(spec *ExtensionTestSpec) {
+			queue <- spec
+		})
+		close(queue)
+	}()
+
+	// Start consumers
+	var wg sync.WaitGroup
+	for i := 0; i < maxConcurrent; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for spec := range queue {
+				res := runSpec(spec)
+				if res.Result == ResultFailed {
+					failures.Add(1)
+				}
+				w.Write(res)
+			}
+		}()
+	}
+
+	// Wait for all consumers to finish
+	wg.Wait()
+
+	failCount := failures.Load()
+	if failCount > 0 {
+		return fmt.Errorf("%d tests failed", failCount)
+	}
+	return nil
 }
 
 func (specs ExtensionTestSpecs) MustFilter(celExprs []string) ExtensionTestSpecs {

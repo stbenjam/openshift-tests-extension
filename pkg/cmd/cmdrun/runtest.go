@@ -14,13 +14,15 @@ import (
 
 func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 	opts := struct {
-		componentFlags *flags.ComponentFlags
-		nameFlags      *flags.NamesFlags
-		outputFlags    *flags.OutputFlags
+		componentFlags   *flags.ComponentFlags
+		concurrencyFlags *flags.ConcurrencyFlags
+		nameFlags        *flags.NamesFlags
+		outputFlags      *flags.OutputFlags
 	}{
-		componentFlags: flags.NewComponentFlags(),
-		nameFlags:      flags.NewNamesFlags(),
-		outputFlags:    flags.NewOutputFlags(),
+		componentFlags:   flags.NewComponentFlags(),
+		nameFlags:        flags.NewNamesFlags(),
+		outputFlags:      flags.NewOutputFlags(),
+		concurrencyFlags: flags.NewConcurrencyFlags(),
 	}
 
 	cmd := &cobra.Command{
@@ -67,12 +69,13 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 			}
 			defer w.Flush()
 
-			return specs.Run(w)
+			return specs.RunParallel(w, opts.concurrencyFlags.MaxConcurency)
 		},
 	}
 	opts.componentFlags.BindFlags(cmd.Flags())
 	opts.nameFlags.BindFlags(cmd.Flags())
 	opts.outputFlags.BindFlags(cmd.Flags())
+	opts.concurrencyFlags.BindFlags(cmd.Flags())
 
 	return cmd
 }
