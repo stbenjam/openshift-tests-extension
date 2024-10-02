@@ -71,5 +71,5 @@ type ExtensionTestResult struct {
 	Result    Result       `json:"result"`
 	Output    string       `json:"output"`
 	Error     string       `json:"error"`
-	Messages  []string     `json:"messages"`
+	Details   []string     `json:"details"`
 }
