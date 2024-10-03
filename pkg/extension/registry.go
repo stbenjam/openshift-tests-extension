@@ -1,7 +1,5 @@
 package extension
 
-import "fmt"
-
 const DefaultExtension = "default"
 
 type Registry struct {
@@ -33,7 +31,7 @@ func (r *Registry) Register(extension *Extension) {
 		r.extensions[DefaultExtension] = extension
 	}
 
-	r.extensions[fmt.Sprintf("%s", extension.Component.Identifier())] = extension
+	r.extensions[extension.Component.Identifier()] = extension
 }
 
 func (r *Registry) Deregister(name string) {

@@ -81,20 +81,3 @@ func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 	componentFlags.BindFlags(cmd.Flags())
 	return cmd
 }
-
-// Function to find old names not present in new names
-func findMissingNames(allOldNames, allNewNames []string) []string {
-	nameExists := make(map[string]bool)
-	for _, newName := range allNewNames {
-		nameExists[newName] = true
-	}
-
-	var missingNames []string
-	for _, oldName := range allOldNames {
-		if !nameExists[oldName] {
-			missingNames = append(missingNames, oldName)
-		}
-	}
-
-	return missingNames
-}
