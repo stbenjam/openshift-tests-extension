@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -37,7 +38,7 @@ func NewUpdateCommand(registry *extension.Registry) *cobra.Command {
 			}
 
 			// Read existing specs
-			metadataPath := filepath.Join(metadataDirectory, fmt.Sprintf("%s.json", ext.Component.Identifier()))
+			metadataPath := filepath.Join(metadataDirectory, fmt.Sprintf("%s.json", strings.ReplaceAll(ext.Component.Identifier(), ":", "_")))
 			var oldSpecs extensiontests.ExtensionTestSpecs
 			source, err := os.Open(metadataPath)
 			if err != nil {
