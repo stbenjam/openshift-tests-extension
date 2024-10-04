@@ -1,11 +1,16 @@
 package extensiontests
 
 import (
+	"fmt"
 	"reflect"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/openshift-eng/openshift-tests-extension/pkg/dbtime"
 )
 
 func TestExtensionTestSpecs_Walk(t *testing.T) {
@@ -123,4 +128,138 @@ func TestExtensionTestSpecs_UnsetTag(t *testing.T) {
 	specs = specs.UnsetTag("priority")
 	_, exists := specs[0].Tags["priority"]
 	assert.False(t, exists)
+}
+
+func produceTestResult(name string, duration time.Duration) *ExtensionTestResult {
+	return &ExtensionTestResult{
+		Name:      name,
+		Duration:  duration.Milliseconds(),
+		StartTime: dbtime.Ptr(time.Now().UTC().Add(-duration)),
+		EndTime:   dbtime.Ptr(time.Now()),
+		Result:    ResultPassed,
+	}
+}
+
+func TestExtensionTestSpecs_HookExecution(t *testing.T) {
+	testCases := []struct {
+		name               string
+		expectedBeforeAll  int32
+		expectedBeforeEach int32
+		expectedAfterEach  int32
+		expectedAfterAll   int32
+		numSpecs           int
+		numSpecSets        int
+	}{
+		{
+			name:               "all hooks run - high test count",
+			expectedBeforeAll:  1,
+			expectedBeforeEach: 10000,
+			expectedAfterEach:  10000,
+			expectedAfterAll:   1,
+			numSpecs:           10000,
+		},
+		{
+			name:               "no AddBeforeAll",
+			expectedBeforeAll:  0,
+			expectedBeforeEach: 2,
+			expectedAfterEach:  2,
+			expectedAfterAll:   1,
+			numSpecs:           2,
+		},
+		{
+			name:               "no AddAfterEach",
+			expectedBeforeAll:  1,
+			expectedBeforeEach: 2,
+			expectedAfterEach:  0,
+			expectedAfterAll:   1,
+			numSpecs:           2,
+		},
+		{
+			name:               "only AddAfterAll",
+			expectedBeforeAll:  0,
+			expectedBeforeEach: 0,
+			expectedAfterEach:  0,
+			expectedAfterAll:   1,
+			numSpecs:           2,
+		},
+		{
+			name:               "beforeEach only",
+			expectedBeforeAll:  0,
+			expectedBeforeEach: 2,
+			expectedAfterEach:  0,
+			expectedAfterAll:   0,
+			numSpecs:           2,
+		},
+		{
+			name:               "beforeAll and afterAll only",
+			expectedBeforeAll:  1,
+			expectedBeforeEach: 0,
+			expectedAfterEach:  0,
+			expectedAfterAll:   1,
+			numSpecs:           2,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			specs := ExtensionTestSpecs{}
+			for i := 0; i < tc.numSpecs; i++ {
+				specs = append(specs, &ExtensionTestSpec{
+					Name: fmt.Sprintf("test spec %d", i+1),
+					Run: func() *ExtensionTestResult {
+						return produceTestResult(fmt.Sprintf("test result %d", i+1), 20*time.Second)
+					},
+				})
+			}
+
+			// Hook invocation counters
+			var beforeAllCount, beforeEachCount, afterEachCount, afterAllCount atomic.Int32
+
+			// Set up hooks based on the expected test case
+			if tc.expectedBeforeAll > 0 {
+				specs.AddBeforeAll(func() {
+					beforeAllCount.Add(1)
+				})
+			}
+			if tc.expectedBeforeEach > 0 {
+				specs.AddBeforeEach(func() {
+					beforeEachCount.Add(1)
+				})
+			}
+			if tc.expectedAfterEach > 0 {
+				specs.AddAfterEach(func() {
+					afterEachCount.Add(1)
+				})
+			}
+			if tc.expectedAfterAll > 0 {
+				specs.AddAfterAll(func() {
+					afterAllCount.Add(1)
+				})
+			}
+
+			// Run the test specs
+			err := specs.Run(NullResultWriter{}, 10)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			// Verify the hook invocation counts
+			if beforeAllCount.Load() != tc.expectedBeforeAll {
+				t.Errorf("Expected BeforeAll to run %d times, but ran %d times", tc.expectedBeforeAll,
+					beforeAllCount.Load())
+			}
+			if beforeEachCount.Load() != tc.expectedBeforeEach {
+				t.Errorf("Expected BeforeEach to run %d times, but ran %d times", tc.expectedBeforeEach,
+					beforeEachCount.Load())
+			}
+			if afterEachCount.Load() != tc.expectedAfterEach {
+				t.Errorf("Expected AfterEach to run %d times, but ran %d times", tc.expectedAfterEach,
+					afterEachCount.Load())
+			}
+			if afterAllCount.Load() != tc.expectedAfterAll {
+				t.Errorf("Expected AfterAll to run %d times, but ran %d times", tc.expectedAfterAll,
+					afterAllCount.Load())
+			}
+		})
+	}
 }

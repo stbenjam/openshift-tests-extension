@@ -1,10 +1,14 @@
-package time
+package dbtime
 
 import "time"
 
 // DBTime is a type suitable for direct importing into databases like BigQuery,
 // formatted like 2006-01-02 15:04:05.000000 UTC.
 type DBTime time.Time
+
+func Ptr(t time.Time) *DBTime {
+	return (*DBTime)(&t)
+}
 
 func (dbt *DBTime) MarshalJSON() ([]byte, error) {
 	formattedTime := time.Time(*dbt).Format(`"2006-01-02 15:04:05.000000 UTC"`)

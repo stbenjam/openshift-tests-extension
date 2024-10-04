@@ -6,6 +6,16 @@ import (
 	"io"
 )
 
+type ResultWriter interface {
+	Write(result *ExtensionTestResult)
+	Flush()
+}
+
+type NullResultWriter struct{}
+
+func (NullResultWriter) Write(*ExtensionTestResult) {}
+func (NullResultWriter) Flush()                     {}
+
 type ResultFormat string
 
 var (
@@ -13,13 +23,13 @@ var (
 	JSONL ResultFormat = "jsonl"
 )
 
-type ResultWriter struct {
+type JSONResultWriter struct {
 	out     io.Writer
 	format  ResultFormat
 	results ExtensionTestResults
 }
 
-func NewResultWriter(out io.Writer, format ResultFormat) (*ResultWriter, error) {
+func NewResultWriter(out io.Writer, format ResultFormat) (*JSONResultWriter, error) {
 	switch format {
 	case JSON, JSONL:
 	// do nothing
@@ -27,13 +37,13 @@ func NewResultWriter(out io.Writer, format ResultFormat) (*ResultWriter, error) 
 		return nil, fmt.Errorf("unsupported result format: %s", format)
 	}
 
-	return &ResultWriter{
+	return &JSONResultWriter{
 		out:    out,
 		format: format,
 	}, nil
 }
 
-func (w *ResultWriter) Write(result *ExtensionTestResult) {
+func (w *JSONResultWriter) Write(result *ExtensionTestResult) {
 	switch w.format {
 	case JSONL:
 		// JSONL gets written to out as we get the items
@@ -47,7 +57,7 @@ func (w *ResultWriter) Write(result *ExtensionTestResult) {
 	}
 }
 
-func (w *ResultWriter) Flush() {
+func (w *JSONResultWriter) Flush() {
 	switch w.format {
 	case JSONL:
 	// we already wrote it out

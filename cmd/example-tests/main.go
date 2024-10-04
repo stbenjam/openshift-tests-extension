@@ -53,6 +53,15 @@ func main() {
 		panic(fmt.Sprintf("couldn't build extension test specs from ginkgo: %+v", err.Error()))
 	}
 
+	// You can add hooks to run before/after tests. "Each" functions must
+	// be thread safe.
+	//
+	// 	specs.AddBeforeEach(func() {
+	//		// do stuff
+	//	})
+	//
+	//	Also: AddBeforeAll, AddAfterEach, AddAfterAll
+
 	// You can also manually build a test specs list from other testing tooling
 	// TODO: example
 
@@ -74,7 +83,6 @@ func main() {
 	//		spec.OtherNames = sets.New[string](`[sig-testing] openshift-tests-extension has a test with a tpyo`)
 	//	}
 	// })
-
 	ext.AddSpecs(specs)
 	registry.Register(ext)
 
