@@ -32,7 +32,7 @@ var _ = Describe("[sig-testing] example-tests list", Label("framework"), func() 
 
 func runList(args ...string) e.ExtensionTestSpecs {
 	var result e.ExtensionTestSpecs
-	args = append([]string{"list"}, args...)
+	args = append([]string{"list", "tests"}, args...)
 	cmd := exec.Command(binary, args...)
 	output, err := cmd.Output()
 	Expect(err).ShouldNot(HaveOccurred(), "Expected `example-tests info` to run successfully")

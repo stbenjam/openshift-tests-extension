@@ -1,12 +1,14 @@
 package cmdlist
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/openshift-eng/openshift-tests-extension/pkg/extension"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/flags"
 )
 
@@ -112,12 +114,36 @@ func NewListCommand(registry *extension.Registry) *cobra.Command {
 		Use:   "list [subcommand]",
 		Short: "List items",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return listTestsCmd.RunE(cmd, args)
+			// List without arguments implements the old interface pre-openshift extensions
+			// for compatibility reasons.  It'll be removed in an upcoming release of
+			// openshift-tests-extension, don't implement new functionality on it.
+			//
+			// **Use "list tests" instead.**
+
+			ext := registry.Get(opts.componentFlags.Component)
+			if ext == nil {
+				return fmt.Errorf("component not found: %s", opts.componentFlags.Component)
+			}
+
+			// Filter for suite
+			specs := ext.GetSpecs()
+			type compatibleTestOutput struct {
+				Name string
+			}
+			var names []*compatibleTestOutput
+			specs.Walk(func(spec *extensiontests.ExtensionTestSpec) {
+				names = append(names, &compatibleTestOutput{Name: spec.Name})
+			})
+
+			data, err := json.Marshal(&names)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stdout, "%s\n", string(data))
+			return nil
 		},
 	}
-	opts.suiteFlags.BindFlags(listCmd.Flags())
 	opts.componentFlags.BindFlags(listCmd.Flags())
-	opts.outputFlags.BindFlags(listCmd.Flags())
 	listCmd.AddCommand(listTestsCmd, listComponentsCmd, listSuitesCommand)
 
 	return listCmd
