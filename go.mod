@@ -1,6 +1,6 @@
 module github.com/openshift-eng/openshift-tests-extension
 
-go 1.22.4
+go 1.22.0
 
 require (
 	github.com/google/cel-go v0.17.8
