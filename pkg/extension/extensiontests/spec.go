@@ -10,9 +10,10 @@ import (
 	"github.com/google/cel-go/checker/decls"
 	"github.com/google/cel-go/common/types"
 
-	t "github.com/openshift-eng/openshift-tests-extension/pkg/time"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/dbtime"
 )
 
+// Walk iterates over all test specs, and executions the function provided. The test spec can be mutated.
 func (specs ExtensionTestSpecs) Walk(walkFn func(*ExtensionTestSpec)) ExtensionTestSpecs {
 	for i := range specs {
 		walkFn(specs[i])
@@ -39,9 +40,20 @@ func (specs ExtensionTestSpecs) Names() []string {
 	return names
 }
 
-func (specs ExtensionTestSpecs) Run(w *ResultWriter, maxConcurrent int) error {
+// Run executes all the specs in parallel, up to maxConcurrent at the same time. Results
+// are written to the given ResultWriter after each spec has completed execution.  BeforeEach,
+// BeforeAll, AfterEach, AfterAll hooks are executed when specified. "Each" hooks must be thread
+// safe. Returns an error if any test spec failed, indicating the quantity of failures.
+func (specs ExtensionTestSpecs) Run(w ResultWriter, maxConcurrent int) error {
 	queue := make(chan *ExtensionTestSpec)
 	failures := atomic.Int64{}
+
+	// Execute beforeAll
+	for _, spec := range specs {
+		for _, beforeAllTask := range spec.beforeAll {
+			beforeAllTask.Run()
+		}
+	}
 
 	// Feed the queue
 	go func() {
@@ -58,9 +70,17 @@ func (specs ExtensionTestSpecs) Run(w *ResultWriter, maxConcurrent int) error {
 		go func() {
 			defer wg.Done()
 			for spec := range queue {
+				for _, beforeEachTask := range spec.beforeEach {
+					beforeEachTask.Run()
+				}
+
 				res := runSpec(spec)
 				if res.Result == ResultFailed {
 					failures.Add(1)
+				}
+
+				for _, afterEachTask := range spec.afterEach {
+					afterEachTask.Run()
 				}
 				w.Write(res)
 			}
@@ -70,6 +90,13 @@ func (specs ExtensionTestSpecs) Run(w *ResultWriter, maxConcurrent int) error {
 	// Wait for all consumers to finish
 	wg.Wait()
 
+	// Execute afterAll
+	for _, spec := range specs {
+		for _, afterAllTask := range spec.afterAll {
+			afterAllTask.Run()
+		}
+	}
+
 	failCount := failures.Load()
 	if failCount > 0 {
 		return fmt.Errorf("%d tests failed", failCount)
@@ -77,6 +104,43 @@ func (specs ExtensionTestSpecs) Run(w *ResultWriter, maxConcurrent int) error {
 	return nil
 }
 
+// AddBeforeAll adds a function to be run once before all tests start executing.
+func (specs ExtensionTestSpecs) AddBeforeAll(fn func()) {
+	task := &OneTimeTask{fn: fn}
+	specs.Walk(func(spec *ExtensionTestSpec) {
+		spec.beforeAll = append(spec.beforeAll, task)
+	})
+}
+
+// AddAfterAll adds a function to be run once after all tests have finished.
+func (specs ExtensionTestSpecs) AddAfterAll(fn func()) {
+	task := &OneTimeTask{fn: fn}
+	specs.Walk(func(spec *ExtensionTestSpec) {
+		spec.afterAll = append(spec.afterAll, task)
+	})
+}
+
+// AddBeforeEach adds a function that runs before each test starts executing. This function
+// must be thread safe!
+func (specs ExtensionTestSpecs) AddBeforeEach(fn func()) {
+	task := &RepeatableTask{fn: fn}
+	specs.Walk(func(spec *ExtensionTestSpec) {
+		spec.beforeEach = append(spec.beforeEach, task)
+	})
+}
+
+// AddAfterEach adds a function that runs after each test has finished executing. This function
+// must be thread safe!
+func (specs ExtensionTestSpecs) AddAfterEach(fn func()) {
+	task := &RepeatableTask{fn: fn}
+	specs.Walk(func(spec *ExtensionTestSpec) {
+		spec.afterEach = append(spec.afterEach, task)
+	})
+}
+
+// MustFilter filters specs using the given celExprs.  Each celExpr is OR'd together, if any
+// match the spec is included in the filtered set. If your CEL expression is invalid or filtering
+// otherwise fails, this function panics.
 func (specs ExtensionTestSpecs) MustFilter(celExprs []string) ExtensionTestSpecs {
 	specs, err := specs.Filter(celExprs)
 	if err != nil {
@@ -86,6 +150,8 @@ func (specs ExtensionTestSpecs) MustFilter(celExprs []string) ExtensionTestSpecs
 	return specs
 }
 
+// Filter filters specs using the given celExprs.  Each celExpr is OR'd together, if any
+// match the spec is included in the filtered set.
 func (specs ExtensionTestSpecs) Filter(celExprs []string) (ExtensionTestSpecs, error) {
 	var filteredSpecs ExtensionTestSpecs
 
@@ -154,6 +220,7 @@ func (specs ExtensionTestSpecs) Filter(celExprs []string) (ExtensionTestSpecs, e
 	return filteredSpecs, nil
 }
 
+// AddLabel adds the labels to each spec.
 func (specs ExtensionTestSpecs) AddLabel(labels ...string) ExtensionTestSpecs {
 	for i := range specs {
 		specs[i].Labels.Insert(labels...)
@@ -162,6 +229,7 @@ func (specs ExtensionTestSpecs) AddLabel(labels ...string) ExtensionTestSpecs {
 	return specs
 }
 
+// RemoveLabel removes the labels from each spec.
 func (specs ExtensionTestSpecs) RemoveLabel(labels ...string) ExtensionTestSpecs {
 	for i := range specs {
 		specs[i].Labels.Delete(labels...)
@@ -170,6 +238,7 @@ func (specs ExtensionTestSpecs) RemoveLabel(labels ...string) ExtensionTestSpecs
 	return specs
 }
 
+// SetTag specifies a key/value pair for each spec.
 func (specs ExtensionTestSpecs) SetTag(key, value string) ExtensionTestSpecs {
 	for i := range specs {
 		specs[i].Tags[key] = value
@@ -178,6 +247,7 @@ func (specs ExtensionTestSpecs) SetTag(key, value string) ExtensionTestSpecs {
 	return specs
 }
 
+// UnsetTag removes the specified key from each spec.
 func (specs ExtensionTestSpecs) UnsetTag(key string) ExtensionTestSpecs {
 	for i := range specs {
 		delete(specs[i].Tags, key)
@@ -200,12 +270,10 @@ func runSpec(spec *ExtensionTestSpec) *ExtensionTestResult {
 
 	// If the runner doesn't populate this info, we should set it
 	if res.StartTime == nil {
-		dbTime := t.DBTime(startTime)
-		res.StartTime = &dbTime
+		res.StartTime = dbtime.Ptr(startTime)
 	}
 	if res.EndTime == nil {
-		dbTime := t.DBTime(endTime)
-		res.EndTime = &dbTime
+		res.EndTime = dbtime.Ptr(endTime)
 	}
 	if res.Duration == 0 {
 		res.Duration = duration.Milliseconds()

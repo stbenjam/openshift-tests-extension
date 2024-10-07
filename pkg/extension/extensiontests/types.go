@@ -3,7 +3,7 @@ package extensiontests
 import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/openshift-eng/openshift-tests-extension/pkg/time"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/dbtime"
 )
 
 type Lifecycle string
@@ -40,6 +40,12 @@ type ExtensionTestSpec struct {
 
 	// Run invokes a test (TODO:relace gingko spec state with our own)
 	Run func() *ExtensionTestResult `json:"-"`
+
+	// Hook functions
+	afterAll   []Task
+	beforeAll  []Task
+	afterEach  []Task
+	beforeEach []Task
 }
 
 type Resources struct {
@@ -63,13 +69,13 @@ var ResultSkipped Result = "skipped"
 var ResultFailed Result = "failed"
 
 type ExtensionTestResult struct {
-	Name      string       `json:"name"`
-	Lifecycle Lifecycle    `json:"lifecycle"`
-	Duration  int64        `json:"duration"`
-	StartTime *time.DBTime `json:"startTime"`
-	EndTime   *time.DBTime `json:"endTime"`
-	Result    Result       `json:"result"`
-	Output    string       `json:"output"`
-	Error     string       `json:"error"`
-	Details   []string     `json:"details"`
+	Name      string         `json:"name"`
+	Lifecycle Lifecycle      `json:"lifecycle"`
+	Duration  int64          `json:"duration"`
+	StartTime *dbtime.DBTime `json:"startTime"`
+	EndTime   *dbtime.DBTime `json:"endTime"`
+	Result    Result         `json:"result"`
+	Output    string         `json:"output"`
+	Error     string         `json:"error"`
+	Details   []string       `json:"details"`
 }
