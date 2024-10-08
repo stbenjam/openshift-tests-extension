@@ -38,7 +38,11 @@ type ExtensionTestSpec struct {
 	// Tests must not remain informing forever.
 	Lifecycle Lifecycle `json:"lifecycle"`
 
-	// Run invokes a test (TODO:relace gingko spec state with our own)
+	// CreatedAt keeps track of test inception time -- we keep track of the earliest
+	// test inception time.
+	CreatedAt *dbtime.DBTime `json:"createdAt"`
+
+	// Run invokes a test
 	Run func() *ExtensionTestResult `json:"-"`
 
 	// Hook functions

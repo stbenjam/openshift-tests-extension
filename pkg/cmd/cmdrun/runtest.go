@@ -30,14 +30,16 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 		Short:        "Runs tests by name",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ext := registry.Get(opts.componentFlags.Component)
-			if ext == nil {
-				return fmt.Errorf("component not found: %s", opts.componentFlags.Component)
-			}
 			if len(args) > 1 {
 				return fmt.Errorf("use --names to specify more than one test")
 			}
 			opts.nameFlags.Names = append(opts.nameFlags.Names, args...)
+
+			ext := registry.Get(opts.componentFlags.Component)
+			if ext == nil {
+				return fmt.Errorf("component not found: %s", opts.componentFlags.Component)
+			}
+			specs := ext.GetSpecs()
 
 			// allow reading tests from an stdin pipe
 			info, err := os.Stdin.Stat()
@@ -58,7 +60,7 @@ func NewRunTestCommand(registry *extension.Registry) *cobra.Command {
 				return fmt.Errorf("must specify at least one test")
 			}
 
-			specs, err := ext.FindSpecsByName(opts.nameFlags.Names...)
+			specs, err = specs.FindSpecsByName(opts.nameFlags.Names...)
 			if err != nil {
 				return err
 			}

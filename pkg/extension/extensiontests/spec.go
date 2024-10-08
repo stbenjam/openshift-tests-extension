@@ -2,6 +2,7 @@ package extensiontests
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -254,6 +255,47 @@ func (specs ExtensionTestSpecs) UnsetTag(key string) ExtensionTestSpecs {
 	}
 
 	return specs
+}
+
+func (specs ExtensionTestSpecs) FindSpecsByName(names ...string) (ExtensionTestSpecs, error) {
+	var filteredSpecs ExtensionTestSpecs
+	var notFound []string
+
+	for _, name := range names {
+		found := false
+		for i := range specs {
+			if specs[i].Name == name {
+				filteredSpecs = append(filteredSpecs, specs[i])
+				found = true
+				break
+			}
+		}
+		if !found {
+			notFound = append(notFound, name)
+		}
+	}
+
+	if len(notFound) > 0 {
+		return nil, fmt.Errorf("no such tests: %s", strings.Join(notFound, ", "))
+	}
+
+	return filteredSpecs, nil
+}
+
+// FindSpecByAllNames finds a spec both by its current or previous names.
+func (specs ExtensionTestSpecs) FindSpecByAllNames(name string) (*ExtensionTestSpec, error) {
+	res, err := specs.FindSpecsByName(name)
+	if err == nil && len(res) > 0 {
+		return res[0], nil
+	}
+
+	for _, spec := range specs {
+		if spec.OtherNames.Has(name) {
+			return spec, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no such test: %s", name)
 }
 
 func runSpec(spec *ExtensionTestSpec) *ExtensionTestResult {
