@@ -32,8 +32,8 @@ func configureGinkgo() (*types.SuiteConfig, *types.ReporterConfig, error) {
 	reporterConfig.Verbose = true
 	ginkgo.SetReporterConfig(reporterConfig)
 
-	// Throw away all output
-	ginkgo.GinkgoWriter = GinkgoDiscard
+	// Write output to Stderr
+	ginkgo.GinkgoWriter = ginkgo.NewWriter(os.Stderr)
 
 	gomega.RegisterFailHandler(ginkgo.Fail)
 
@@ -69,7 +69,7 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite() (ext.ExtensionTestSpecs, 
 				}
 
 				var summary types.SpecReport
-				ginkgo.GetSuite().RunSpec(spec, ginkgo.Labels{}, "", cwd, ginkgo.GetFailer(), GinkgoDiscard, *suiteConfig,
+				ginkgo.GetSuite().RunSpec(spec, ginkgo.Labels{}, "", cwd, ginkgo.GetFailer(), ginkgo.GetWriter(), *suiteConfig,
 					*reporterConfig)
 				for _, report := range ginkgo.GetSuite().GetReport().SpecReports {
 					if report.NumAttempts > 0 {
