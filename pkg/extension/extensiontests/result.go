@@ -5,3 +5,7 @@ func (results ExtensionTestResults) Walk(walkFn func(*ExtensionTestResult)) {
 		walkFn(results[i])
 	}
 }
+
+func (result *ExtensionTestResult) AddDetails(name string, value interface{}) {
+	result.Details = append(result.Details, Details{Name: name, Value: value})
+}
