@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -63,7 +64,14 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite(selectFns ...ext.SelectFunc
 	ginkgo.GetSuite().WalkTests(func(name string, spec types.TestSpec) {
 		var codeLocations []string
 		for _, cl := range spec.CodeLocations() {
-			codeLocations = append(codeLocations, cl.String())
+			absPath := cl.String()
+			// Convert absolute path to relative path by removing the current working directory prefix
+			if relPath, err := filepath.Rel(cwd, absPath); err == nil {
+				codeLocations = append(codeLocations, relPath)
+			} else {
+				// Fallback to absolute path if relative path conversion fails
+				codeLocations = append(codeLocations, absPath)
+			}
 		}
 
 		testCase := &ext.ExtensionTestSpec{

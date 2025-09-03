@@ -44,7 +44,7 @@ var _ = Describe("[sig-testing] openshift-tests-extension", func() {
 	})
 
 	It("should support panicking tests", func() {
-		panic("oh no")
+		panic("oh no a code change")
 	})
 
 	It("should support slow tests", g.Slow(), func() {

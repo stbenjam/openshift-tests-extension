@@ -3,6 +3,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdanalyze"
+	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmddiff"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdimages"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdinfo"
 	"github.com/openshift-eng/openshift-tests-extension/pkg/cmd/cmdlist"
@@ -19,5 +21,7 @@ func DefaultExtensionCommands(registry *extension.Registry) []*cobra.Command {
 		cmdinfo.NewInfoCommand(registry),
 		cmdupdate.NewUpdateCommand(registry),
 		cmdimages.NewImagesCommand(registry),
+		cmddiff.NewDiffCommand(registry),
+		cmdanalyze.NewAnalyzeCommand(registry),
 	}
 }

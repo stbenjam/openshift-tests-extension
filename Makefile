@@ -45,3 +45,7 @@ lint:
 
 clean:
 	rm -f example-tests framework-tests
+
+update-generated: build
+	./example-tests update
+	./framework-tests update

@@ -8,7 +8,12 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/framework.go:15",
+      "test/framework/framework.go:16"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] openshift-tests-extension should run `make` command successfully",
@@ -19,7 +24,12 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/framework.go:15",
+      "test/framework/framework.go:21"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] openshift-tests-extension should have the example-tests binary",
@@ -30,7 +40,12 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/framework.go:15",
+      "test/framework/framework.go:29"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests info should have build metadata",
@@ -41,7 +56,13 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/info.go:13",
+      "test/framework/info.go:16",
+      "test/framework/info.go:25"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests info should have the expected suites",
@@ -52,7 +73,13 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/info.go:13",
+      "test/framework/info.go:16",
+      "test/framework/info.go:31"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests info should have the correct component information",
@@ -63,7 +90,30 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/info.go:13",
+      "test/framework/info.go:16",
+      "test/framework/info.go:38"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
+  },
+  {
+    "name": "[sig-testing] example-tests info should be able to log information",
+    "labels": {
+      "framework": {}
+    },
+    "resources": {
+      "isolation": {}
+    },
+    "source": "openshift:framework:default",
+    "codeLocations": [
+      "test/framework/info.go:13",
+      "test/framework/info.go:16",
+      "test/framework/info.go:44"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests list should list all specs",
@@ -74,7 +124,12 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/list.go:13",
+      "test/framework/list.go:14"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests list should populate fields",
@@ -85,7 +140,12 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/list.go:13",
+      "test/framework/list.go:19"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests list should filter specs by suite",
@@ -96,7 +156,28 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/list.go:13",
+      "test/framework/list.go:25"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
+  },
+  {
+    "name": "[sig-testing] example-tests list should filter specs by environment flags",
+    "labels": {
+      "framework": {}
+    },
+    "resources": {
+      "isolation": {}
+    },
+    "source": "openshift:framework:default",
+    "codeLocations": [
+      "test/framework/list.go:13",
+      "test/framework/list.go:32"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests run-suite should contain a test that passed",
@@ -107,7 +188,13 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/run.go:14",
+      "test/framework/run.go:19",
+      "test/framework/run.go:36"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests run-suite should have the correct error message for the failed test",
@@ -118,7 +205,13 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/run.go:14",
+      "test/framework/run.go:19",
+      "test/framework/run.go:47"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   },
   {
     "name": "[sig-testing] example-tests run-suite fast suite should not have a slow test",
@@ -129,6 +222,12 @@
       "isolation": {}
     },
     "source": "openshift:framework:default",
-    "lifecycle": "blocking"
+    "codeLocations": [
+      "test/framework/run.go:14",
+      "test/framework/run.go:19",
+      "test/framework/run.go:56"
+    ],
+    "lifecycle": "blocking",
+    "environmentSelector": {}
   }
 ]
