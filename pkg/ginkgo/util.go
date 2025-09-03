@@ -65,13 +65,10 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite(selectFns ...ext.SelectFunc
 		var codeLocations []string
 		for _, cl := range spec.CodeLocations() {
 			absPath := cl.String()
-			// Convert absolute path to relative path by removing the current working directory prefix
-			if relPath, err := filepath.Rel(cwd, absPath); err == nil {
-				codeLocations = append(codeLocations, relPath)
-			} else {
-				// Fallback to absolute path if relative path conversion fails
-				codeLocations = append(codeLocations, absPath)
-			}
+
+			// Convert Go package path to relative filesystem path
+			relPath := convertPackagePathToRelativePath(cwd, absPath)
+			codeLocations = append(codeLocations, relPath)
 		}
 
 		testCase := &ext.ExtensionTestSpec{
@@ -205,4 +202,56 @@ func lastFilenameSegment(filename string) string {
 		return parts[len(parts)-1]
 	}
 	return filename
+}
+
+// convertPackagePathToRelativePath converts Go package paths to relative filesystem paths
+func convertPackagePathToRelativePath(cwd, packagePath string) string {
+	// Split path and line number if present (e.g., "path/to/file.go:123")
+	parts := strings.Split(packagePath, ":")
+	pathPart := parts[0]
+
+	// First try filepath.Rel for actual filesystem paths
+	if relPath, err := filepath.Rel(cwd, pathPart); err == nil && !strings.Contains(relPath, "..") {
+		// If this is a valid relative path within our directory, use it
+		if len(parts) > 1 {
+			return relPath + ":" + strings.Join(parts[1:], ":")
+		}
+		return relPath
+	}
+
+	// Handle Go package paths (e.g., "github.com/openshift/origin/test/extended/util/framework.go")
+	// Look for common prefixes that indicate this is a package path, not a filesystem path
+	if strings.Contains(pathPart, "/") {
+		pathSegments := strings.Split(pathPart, "/")
+
+		// Find where the actual project path starts by looking for common project structure markers
+		for i, segment := range pathSegments {
+			if segment == "test" || segment == "pkg" || segment == "cmd" {
+				// Take everything from this segment onward
+				relativePath := strings.Join(pathSegments[i:], "/")
+				if len(parts) > 1 {
+					return relativePath + ":" + strings.Join(parts[1:], ":")
+				}
+				return relativePath
+			}
+		}
+
+		// If no common markers found, take the last few segments that look like a file path
+		// This handles cases where the structure might be different
+		if len(pathSegments) >= 2 {
+			// Take the last 2-3 segments if they look like a reasonable file path
+			startIndex := len(pathSegments) - 2
+			if len(pathSegments) >= 3 && !strings.Contains(pathSegments[len(pathSegments)-3], ".") {
+				startIndex = len(pathSegments) - 3
+			}
+			relativePath := strings.Join(pathSegments[startIndex:], "/")
+			if len(parts) > 1 {
+				return relativePath + ":" + strings.Join(parts[1:], ":")
+			}
+			return relativePath
+		}
+	}
+
+	// Fallback: return the original path
+	return packagePath
 }
