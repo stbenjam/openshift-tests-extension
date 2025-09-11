@@ -129,6 +129,8 @@ func (se *SourceExtractor) extractBlockAtLocation(file *ast.File, fset *token.Fi
 	// Find the node at the specified line - we need to find the closest CallExpr
 	var bestNode ast.Node
 	var bestCall *ast.CallExpr
+	var nearbyNodes []ast.Node
+	var nearbyCalls []*ast.CallExpr
 
 	ast.Inspect(file, func(n ast.Node) bool {
 		if n == nil {
@@ -146,9 +148,32 @@ func (se *SourceExtractor) extractBlockAtLocation(file *ast.File, fset *token.Fi
 			if call, ok := n.(*ast.CallExpr); ok {
 				bestCall = call
 			}
+		} else if pos.Line >= line-2 && pos.Line <= line+2 {
+			// Store nearby nodes for fallback
+			nearbyNodes = append(nearbyNodes, n)
+			if call, ok := n.(*ast.CallExpr); ok {
+				nearbyCalls = append(nearbyCalls, call)
+			}
 		}
 		return true
 	})
+
+	// If we didn't find anything at the exact line, try nearby nodes
+	if bestNode == nil && len(nearbyNodes) > 0 {
+		// Look for the closest Ginkgo call first
+		for _, call := range nearbyCalls {
+			if se.isDescribeCall(call) || se.isItCall(call) || se.isBeforeEachCall(call) ||
+				se.isBeforeAllCall(call) || se.isAfterEachCall(call) || se.isAfterAllCall(call) {
+				bestCall = call
+				bestNode = call
+				break
+			}
+		}
+		// If no Ginkgo calls, just use the first nearby node
+		if bestNode == nil {
+			bestNode = nearbyNodes[0]
+		}
+	}
 
 	// Use the CallExpr if we found one, otherwise use the best node
 	if bestCall != nil {
@@ -184,7 +209,7 @@ func (se *SourceExtractor) extractBlockAtLocation(file *ast.File, fset *token.Fi
 	}
 
 	if targetNode == nil {
-		return nil, fmt.Errorf("no AST node found at line %d", line)
+		return nil, fmt.Errorf("no AST node found at line %d (tried nearby lines %d-%d, found %d nearby nodes)", line, line-2, line+2, len(nearbyNodes))
 	}
 
 	// Convert AST node back to source code

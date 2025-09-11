@@ -63,12 +63,19 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite(selectFns ...ext.SelectFunc
 
 	ginkgo.GetSuite().WalkTests(func(name string, spec types.TestSpec) {
 		var codeLocations []string
+		locationSet := make(map[string]bool) // For deduplication
+
 		for _, cl := range spec.CodeLocations() {
 			absPath := cl.String()
 
 			// Convert Go package path to relative filesystem path
 			relPath := convertPackagePathToRelativePath(cwd, absPath)
-			codeLocations = append(codeLocations, relPath)
+
+			// Only add if we haven't seen this location before
+			if !locationSet[relPath] {
+				locationSet[relPath] = true
+				codeLocations = append(codeLocations, relPath)
+			}
 		}
 
 		testCase := &ext.ExtensionTestSpec{
@@ -205,6 +212,7 @@ func lastFilenameSegment(filename string) string {
 }
 
 // convertPackagePathToRelativePath converts Go package paths to relative filesystem paths
+// but only for paths that belong to the current module
 func convertPackagePathToRelativePath(cwd, packagePath string) string {
 	// Split path and line number if present (e.g., "path/to/file.go:123")
 	parts := strings.Split(packagePath, ":")
@@ -219,14 +227,29 @@ func convertPackagePathToRelativePath(cwd, packagePath string) string {
 		return relPath
 	}
 
-	// Handle Go package paths (e.g., "github.com/openshift/origin/test/extended/util/framework.go")
-	// Look for common prefixes that indicate this is a package path, not a filesystem path
+	// Don't convert external module paths - leave them as-is so they're clearly external
+	// External module paths typically look like: "k8s.io/kubernetes@v1.33.2/test/e2e/framework/..."
+	// or "github.com/some-org/some-repo/path/to/file.go"
+	if isExternalModulePath(pathPart) {
+		// Return the original path unchanged
+		return packagePath
+	}
+
+	// Handle local Go package paths that might have been built with an unusual working directory
+	// This is a fallback for edge cases where filepath.Rel didn't work but it's still local code
 	if strings.Contains(pathPart, "/") {
 		pathSegments := strings.Split(pathPart, "/")
 
-		// Find where the actual project path starts by looking for common project structure markers
+		// Only convert if we can find clear project structure markers AND
+		// the path doesn't look like an external module
 		for i, segment := range pathSegments {
 			if segment == "test" || segment == "pkg" || segment == "cmd" {
+				// Double-check this isn't an external path by looking at earlier segments
+				if i > 0 && (strings.Contains(pathSegments[0], ".") || strings.Contains(strings.Join(pathSegments[:i], "/"), "github.com")) {
+					// This looks like an external module path, don't convert
+					return packagePath
+				}
+
 				// Take everything from this segment onward
 				relativePath := strings.Join(pathSegments[i:], "/")
 				if len(parts) > 1 {
@@ -235,23 +258,43 @@ func convertPackagePathToRelativePath(cwd, packagePath string) string {
 				return relativePath
 			}
 		}
+	}
 
-		// If no common markers found, take the last few segments that look like a file path
-		// This handles cases where the structure might be different
-		if len(pathSegments) >= 2 {
-			// Take the last 2-3 segments if they look like a reasonable file path
-			startIndex := len(pathSegments) - 2
-			if len(pathSegments) >= 3 && !strings.Contains(pathSegments[len(pathSegments)-3], ".") {
-				startIndex = len(pathSegments) - 3
-			}
-			relativePath := strings.Join(pathSegments[startIndex:], "/")
-			if len(parts) > 1 {
-				return relativePath + ":" + strings.Join(parts[1:], ":")
-			}
-			return relativePath
+	// Fallback: return the original path unchanged
+	return packagePath
+}
+
+// isExternalModulePath detects if a path is from an external module
+func isExternalModulePath(path string) bool {
+	// Check for versioned module paths (e.g., "k8s.io/kubernetes@v1.33.2/...")
+	if strings.Contains(path, "@v") {
+		return true
+	}
+
+	// Check for common external module prefixes
+	externalPrefixes := []string{
+		"k8s.io/",
+		"github.com/",
+		"gitlab.com/",
+		"bitbucket.org/",
+		"golang.org/",
+		"google.golang.org/",
+		"gopkg.in/",
+	}
+
+	for _, prefix := range externalPrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
 		}
 	}
 
-	// Fallback: return the original path
-	return packagePath
+	// Check if the path starts with a domain-like pattern (contains dots in first segment)
+	if strings.Contains(path, "/") {
+		firstSegment := strings.Split(path, "/")[0]
+		if strings.Contains(firstSegment, ".") {
+			return true
+		}
+	}
+
+	return false
 }
