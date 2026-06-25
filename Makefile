@@ -8,19 +8,25 @@ LDFLAGS := -X '$(GO_PKG_NAME)/pkg/version.CommitFromGit=$(GIT_COMMIT)' \
            -X '$(GO_PKG_NAME)/pkg/version.BuildDate=$(BUILD_DATE)' \
            -X '$(GO_PKG_NAME)/pkg/version.GitTreeState=$(GIT_TREE_STATE)'
 
-.PHONY: verify test lint clean unit integration example-tests framework-tests
+.PHONY: verify test lint clean unit integration example-tests example-noisy-tests framework-tests
 
 all: unit build integration
 
 verify: lint
 
-build: example-tests framework-tests
+build: example-tests example-noisy-tests framework-tests
 
 example-tests:
 	# GO_COMPLIANCE_POLICY="exempt_all" must only be used for test related binaries.
 	# It prevents various FIPS compliance policies from being applied to this compilation.
 	# Do not set globally.
 	GO_COMPLIANCE_POLICY="exempt_all" go build -ldflags "$(LDFLAGS)" ./cmd/example-tests/...
+
+example-noisy-tests:
+	# GO_COMPLIANCE_POLICY="exempt_all" must only be used for test related binaries.
+	# It prevents various FIPS compliance policies from being applied to this compilation.
+	# Do not set globally.
+	GO_COMPLIANCE_POLICY="exempt_all" go build -ldflags "$(LDFLAGS)" ./cmd/example-noisy-tests/...
 
 framework-tests:
 	# GO_COMPLIANCE_POLICY="exempt_all" must only be used for test related binaries.
@@ -45,4 +51,4 @@ lint:
 	./hack/go-lint.sh run ./...
 
 clean:
-	rm -f example-tests framework-tests
+	rm -f example-tests example-noisy-tests framework-tests
