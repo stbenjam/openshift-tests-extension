@@ -72,6 +72,21 @@ func TestExtractJSON(t *testing.T) {
 			input: "I0625 log line\n{\n  \"name\": \"test\",\n  \"result\": \"passed\"\n}\n",
 			want:  "{\n  \"name\": \"test\",\n  \"result\": \"passed\"\n}",
 		},
+		{
+			name:  "JSON with trailing whitespace and CRLF",
+			input: "{\"name\": \"test\", \"result\": \"passed\"}\r\n",
+			want:  `{"name": "test", "result": "passed"}`,
+		},
+		{
+			name:  "non-JSON bracket lines before valid JSON array",
+			input: "[FAILED]\n[BeforeEach]\n[{\"name\": \"test\", \"result\": \"passed\"}]\n",
+			want:  `[{"name": "test", "result": "passed"}]`,
+		},
+		{
+			name:  "non-JSON brace lines before valid JSON object",
+			input: "{not-json}\n{also not json\n{\"name\": \"test\", \"result\": \"passed\"}\n",
+			want:  `{"name": "test", "result": "passed"}`,
+		},
 	}
 
 	for _, tt := range tests {

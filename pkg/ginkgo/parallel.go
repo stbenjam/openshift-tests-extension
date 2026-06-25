@@ -113,12 +113,11 @@ func extractJSON(output []byte) ([]byte, error) {
 			for j := 0; j < i; j++ {
 				offset += len(lines[j]) + 1 // +1 for the newline
 			}
-			offset += len(line) - len(trimmed) // preserve leading whitespace offset
 
 			var raw json.RawMessage
 			dec := json.NewDecoder(bytes.NewReader(output[offset:]))
 			if err := dec.Decode(&raw); err != nil {
-				return nil, fmt.Errorf("found JSON-like content but failed to parse: %w", err)
+				continue // not valid JSON, try next candidate line
 			}
 			return raw, nil
 		}
