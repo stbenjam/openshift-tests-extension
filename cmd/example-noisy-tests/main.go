@@ -27,13 +27,19 @@ func main() {
 	// stdout contamination that occurs in practice from klog, Ginkgo reporters,
 	// and other libraries that write to stdout.
 	if len(os.Args) > 1 && os.Args[1] == "run-test" {
-		fmt.Fprintln(os.Stdout, `I0625 19:25:00.000000   12345 client.go:123] Connecting to apiserver...`)
-		fmt.Fprintln(os.Stdout, `W0625 19:25:01.000000   12345 deprecation.go:78] API v1beta1 is deprecated, use v1`)
-		fmt.Fprintln(os.Stdout, `I0625 19:25:01.100000   12345 round_trippers.go:466] GET https://api.example.com:6443/api 200 OK`)
-		fmt.Fprintln(os.Stdout, `[BeforeEach] [sig-testing] openshift-tests-extension`)
-		fmt.Fprintln(os.Stdout, `  /go/src/github.com/openshift-eng/openshift-tests-extension/test/example/example.go:28`)
-		fmt.Fprintln(os.Stdout, `[It] [sig-testing] openshift-tests-extension should support passing tests`)
-		fmt.Fprintln(os.Stdout, `STEP: Setting up test environment`)
+		// writeNoise emits a simulated log line to stdout. Errors are
+		// intentionally discarded — this is deliberate test noise and an
+		// early stdout closure is harmless.
+		writeNoise := func(line string) {
+			_, _ = fmt.Fprintln(os.Stdout, line)
+		}
+		writeNoise(`I0625 19:25:00.000000   12345 client.go:123] Connecting to apiserver...`)
+		writeNoise(`W0625 19:25:01.000000   12345 deprecation.go:78] API v1beta1 is deprecated, use v1`)
+		writeNoise(`I0625 19:25:01.100000   12345 round_trippers.go:466] GET https://api.example.com:6443/api 200 OK`)
+		writeNoise(`[BeforeEach] [sig-testing] openshift-tests-extension`)
+		writeNoise(`  /go/src/github.com/openshift-eng/openshift-tests-extension/test/example/example.go:28`)
+		writeNoise(`[It] [sig-testing] openshift-tests-extension should support passing tests`)
+		writeNoise(`STEP: Setting up test environment`)
 	}
 
 	// Extension registry
