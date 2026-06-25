@@ -110,6 +110,103 @@ func TestExtractJSON(t *testing.T) {
 	}
 }
 
+// TestIntegrationStdoutContamination tests the full newTestResultFromOutput parsing
+// pipeline with realistic stdout contamination from Ginkgo reporter output, klog
+// lines, and other non-JSON content that extension binaries commonly emit.
+func TestIntegrationStdoutContamination(t *testing.T) {
+	tests := []struct {
+		name       string
+		input      string
+		wantName   string
+		wantResult string
+		wantErr    bool
+	}{
+		{
+			name: "realistic Ginkgo pass with klog and reporter output before JSON object",
+			input: "I0625 19:25:00.000000   12345 client.go:123] Connecting to apiserver...\n" +
+				"I0625 19:25:01.000000   12345 client.go:456] Connected successfully\n" +
+				"W0625 19:25:01.500000   12345 deprecation.go:78] API v1beta1 is deprecated\n" +
+				"[BeforeEach] [sig-apps] Deployment should run the lifecycle of a Deployment\n" +
+				"  /go/src/test/e2e/apps/deployment.go:45\n" +
+				"[It] [sig-apps] Deployment should run the lifecycle of a Deployment\n" +
+				"  /go/src/test/e2e/apps/deployment.go:50\n" +
+				"STEP: Creating a deployment\n" +
+				"STEP: Waiting for deployment to complete\n" +
+				"{\"name\":\"[sig-apps] Deployment should run the lifecycle of a Deployment\",\"lifecycle\":\"\",\"duration\":5123000000,\"startTime\":\"2025-06-25 19:25:00.000000 UTC\",\"endTime\":\"2025-06-25 19:25:05.000000 UTC\",\"result\":\"passed\",\"output\":\"deployment created successfully\"}\n" +
+				"Ran 1 of 1 Specs in 5.123 seconds\n" +
+				"SUCCESS! -- 1 Passed | 0 Failed | 0 Pending | 0 Skipped\n",
+			wantName:   "[sig-apps] Deployment should run the lifecycle of a Deployment",
+			wantResult: "passed",
+		},
+		{
+			name: "realistic Ginkgo failure with FAILED markers and klog before JSON array",
+			input: "I0625 19:30:00.000000   67890 setup.go:99] Initializing test framework\n" +
+				"[BeforeEach] [sig-network] Services should provide secure master service\n" +
+				"  /go/src/test/e2e/network/service.go:100\n" +
+				"[FAILED] [sig-network] Services should provide secure master service\n" +
+				"  Expected success, but got an error:\n" +
+				"      <*errors.StatusError | 0xc000abcdef>: connection refused\n" +
+				"FAIL! -- 0 Passed | 1 Failed | 0 Pending | 0 Skipped\n" +
+				"[{\"name\":\"[sig-network] Services should provide secure master service\",\"lifecycle\":\"\",\"duration\":30000000000,\"startTime\":\"2025-06-25 19:30:00.000000 UTC\",\"endTime\":\"2025-06-25 19:30:30.000000 UTC\",\"result\":\"failed\",\"output\":\"connection refused\",\"error\":\"timed out waiting for service\"}]\n" +
+				"Ran 1 of 1 Specs in 30.000 seconds\n",
+			wantName:   "[sig-network] Services should provide secure master service",
+			wantResult: "failed",
+		},
+		{
+			name: "heavy klog contamination with CRLF line endings and JSON object",
+			input: "I0625 19:40:00.000000   11111 reflector.go:219] Listing and watching\r\n" +
+				"I0625 19:40:00.100000   11111 reflector.go:255] Caches populated\r\n" +
+				"I0625 19:40:00.200000   11111 shared_informer.go:270] Synced\r\n" +
+				"E0625 19:40:01.000000   11111 leaderelection.go:330] error retrieving lock\r\n" +
+				"{\"name\":\"[sig-auth] RBAC should handle basic RBAC operations\",\"lifecycle\":\"\",\"duration\":2000000000,\"startTime\":\"2025-06-25 19:40:00.000000 UTC\",\"endTime\":\"2025-06-25 19:40:02.000000 UTC\",\"result\":\"passed\",\"output\":\"rbac verified\"}\r\n",
+			wantName:   "[sig-auth] RBAC should handle basic RBAC operations",
+			wantResult: "passed",
+		},
+		{
+			name: "Ginkgo spec output with multiple bracket-prefixed non-JSON lines before JSON",
+			input: "[BeforeEach] setup cluster\n" +
+				"[JustBeforeEach] configure workload\n" +
+				"[It] [sig-storage] PV should be bound\n" +
+				"[AfterEach] teardown\n" +
+				"[FAILED] in [It] - /go/src/test.go:42\n" +
+				"[{\"name\":\"[sig-storage] PV should be bound\",\"lifecycle\":\"\",\"duration\":10000000000,\"startTime\":\"2025-06-25 19:45:00.000000 UTC\",\"endTime\":\"2025-06-25 19:45:10.000000 UTC\",\"result\":\"failed\",\"output\":\"pv not bound\",\"error\":\"timeout\"}]\n",
+			wantName:   "[sig-storage] PV should be bound",
+			wantResult: "failed",
+		},
+		{
+			name: "only Ginkgo noise with no valid JSON anywhere",
+			input: "I0625 19:50:00.000000   22222 client.go:100] Starting\n" +
+				"[BeforeEach] some test\n" +
+				"[FAILED] some test\n" +
+				"FAIL! -- 0 Passed | 1 Failed\n" +
+				"{not valid json at all}\n",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := bytes.NewBufferString(tt.input)
+			result, err := newTestResultFromOutput(buf)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("newTestResultFromOutput() expected error, got result: %+v", result)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("newTestResultFromOutput() unexpected error: %v", err)
+			}
+			if result.Name != tt.wantName {
+				t.Errorf("result.Name = %q, want %q", result.Name, tt.wantName)
+			}
+			if string(result.Result) != tt.wantResult {
+				t.Errorf("result.Result = %q, want %q", result.Result, tt.wantResult)
+			}
+		})
+	}
+}
+
 func TestNewTestResultFromOutput(t *testing.T) {
 	tests := []struct {
 		name       string
