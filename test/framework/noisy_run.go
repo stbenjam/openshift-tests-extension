@@ -13,11 +13,6 @@ import (
 	e "github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 )
 
-const noisyBinary = "./example-noisy-tests"
-
-// buildTimeout is the maximum time allowed for building the noisy binary.
-const buildTimeout = 2 * time.Minute
-
 // suiteTimeout is the maximum time allowed for running the test suite.
 const suiteTimeout = 5 * time.Minute
 
@@ -26,19 +21,9 @@ const suiteTimeout = 5 * time.Minute
 // reporter text, etc.) during run-test subprocess execution. This verifies
 // that extractJSON correctly handles stdout contamination end-to-end.
 //
-// The build step and run-suite specs are in the same Ordered container so
-// that Ginkgo guarantees the binary is built before any suite-execution
-// spec runs, and fail-fast skips downstream specs if the build breaks.
-var _ = Describe("[sig-testing] example-noisy-tests", Ordered, Label("framework"), func() {
-	It("should build the noisy binary", func() {
-		ctx, cancel := context.WithTimeout(context.Background(), buildTimeout)
-		defer cancel()
-
-		cmd := exec.CommandContext(ctx, "make", "example-noisy-tests")
-		err := cmd.Run()
-		Expect(err).ShouldNot(HaveOccurred(), "Expected `make example-noisy-tests` to run successfully")
-	})
-
+// The example-tests binary is already built by the framework.go Ordered
+// container, so no separate build step is needed here.
+var _ = Describe("[sig-testing] example-tests stdout contamination", Ordered, Label("framework"), func() {
 	Context("run-suite", func() {
 		var result e.ExtensionTestResults
 		var output []byte
@@ -48,7 +33,7 @@ var _ = Describe("[sig-testing] example-noisy-tests", Ordered, Label("framework"
 			ctx, cancel := context.WithTimeout(context.Background(), suiteTimeout)
 			defer cancel()
 
-			cmd := exec.CommandContext(ctx, noisyBinary, "run-suite", "example/fast")
+			cmd := exec.CommandContext(ctx, binary, "run-suite", "example/fast")
 
 			// Capture both stdout and stderr
 			output, cmdErr = cmd.Output()
