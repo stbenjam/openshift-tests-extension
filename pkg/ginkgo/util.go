@@ -122,7 +122,9 @@ func BuildExtensionTestSpecsFromOpenShiftGinkgoSuite(selectFns ...ext.SelectFunc
 					result.Error = strings.Join(errors, "\n")
 				case types.SpecStateTimedout:
 					result.Result = ext.ResultFailed
-					var errors []string
+					// lead with the same marker the parent process uses, so CI tooling can
+					// string-match timeouts in failure output regardless of which layer caught it
+					errors := []string{fmt.Sprintf("test timed out after %s", summary.RunTime)}
 					for _, additionalFailure := range summary.AdditionalFailures {
 						collectAdditionalFailures(&errors, "  ", additionalFailure.Failure)
 					}

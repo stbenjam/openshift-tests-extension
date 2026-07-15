@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -15,12 +16,17 @@ import (
 	"github.com/openshift-eng/openshift-tests-extension/pkg/extension/extensiontests"
 )
 
+// escalationGrace is how long SpawnProcessToRunTest waits past the test timeout
+// before interrupting the subprocess — the subprocess enforces --timeout itself
+// and self-reports a structured timeout, so the grace period gives it a chance
+// to do that first — and again how long it waits after SIGINT before requesting
+// a stack dump via SIGABRT. It is a variable only so tests can shorten it.
+var escalationGrace = time.Minute
+
 func SpawnProcessToRunTest(ctx context.Context, testName string, timeout time.Duration) *extensiontests.ExtensionTestResult {
-	// longerCtx is used to backstop the process, but leave termination up to us if possible to allow a double interrupt
+	// longerCtx backstop-kills a subprocess that survives the SIGINT/SIGABRT escalation below
 	longerCtx, longerCancel := context.WithTimeout(ctx, timeout+15*time.Minute)
 	defer longerCancel()
-	timeoutCtx, shorterCancel := context.WithTimeout(longerCtx, timeout)
-	defer shorterCancel()
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -36,38 +42,62 @@ func SpawnProcessToRunTest(ctx context.Context, testName string, timeout time.Du
 		return newTestResult(testName, extensiontests.ResultFailed, start, time.Now(), stdout, stderr)
 	}
 
+	var timedOut atomic.Bool
+	done := make(chan struct{})
+	escalationExited := make(chan struct{})
 	go func() {
-		// interrupt after timeout, or exit early if the process finishes first
+		defer close(escalationExited)
 		select {
-		case <-time.After(timeout):
-		case <-timeoutCtx.Done():
-		}
-		if command.Process != nil {
-			_ = command.Process.Signal(syscall.SIGINT)
-		}
-		// Canceled means the process exited and the context was cancelled — no need to escalate
-		if timeoutCtx.Err() == context.Canceled {
+		case <-time.After(timeout + escalationGrace):
+		case <-done:
+			return
+		case <-ctx.Done():
+			// the caller aborted the whole run; longerCtx kills the process, and it is not a timeout
 			return
 		}
+		timedOut.Store(true) // store before SIGINT so Wait() cannot return before the flag is visible
+		_ = command.Process.Signal(syscall.SIGINT)
 		// if the process is hung, send SIGABRT after a grace period for a stack dump
-		<-time.After(time.Minute)
-		if command.Process != nil {
+		select {
+		case <-time.After(escalationGrace):
 			_ = command.Process.Signal(syscall.SIGABRT)
+		case <-done:
 		}
 	}()
 
-	result := extensiontests.ResultFailed
 	cmdErr := command.Wait()
+	end := time.Now()
+	close(done)
+	<-escalationExited // join so timedOut can't change and no stray signal fires after this point
 
-	subcommandResult, parseErr := newTestResultFromOutput(stdout)
-	if parseErr == nil {
-		// even if we have a cmdErr, if we were able to parse the result, trust the output
-		return subcommandResult
+	// even if we have a cmdErr, if we were able to parse the result, trust the output
+	result, parseErr := newTestResultFromOutput(stdout)
+	if parseErr != nil {
+		fmt.Fprintf(stderr, "Command Error: %v\n", cmdErr)
+		fmt.Fprintf(stderr, "Deserialization Error: %v\n", parseErr)
+		result = newTestResult(testName, extensiontests.ResultFailed, start, end, stdout, stderr)
 	}
 
-	fmt.Fprintf(stderr, "Command Error: %v\n", cmdErr)
-	fmt.Fprintf(stderr, "Deserialization Error: %v\n", parseErr)
-	return newTestResult(testName, result, start, time.Now(), stdout, stderr)
+	// a pass or skip that raced the escalation stays as reported; only failures get the timeout marker
+	if timedOut.Load() && result.Result == extensiontests.ResultFailed {
+		markTimedOut(result, timeout, cmdErr)
+	}
+	return result
+}
+
+// markTimedOut stamps a failed result whose subprocess was interrupted by the
+// timeout escalation with a leading "test timed out after ..." line — the string
+// CI consumers match on in JUnit failure output — so it can't end up buried
+// under a stack dump.
+func markTimedOut(result *extensiontests.ExtensionTestResult, timeout time.Duration, cmdErr error) {
+	msg := fmt.Sprintf("test timed out after %s", timeout)
+	if cmdErr != nil {
+		msg = fmt.Sprintf("%s; subprocess exit: %v", msg, cmdErr)
+	}
+	if result.Error != "" {
+		msg += "\n" + result.Error
+	}
+	result.Error = msg
 }
 
 func newTestResultFromOutput(stdout *bytes.Buffer) (*extensiontests.ExtensionTestResult, error) {
